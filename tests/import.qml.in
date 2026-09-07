@@ -1,0 +1,38 @@
+import QtQuick
+import "../plugin/native" as Native
+
+QtObject {
+    property var view: Native.FireworksView { time: 3.7 }
+    property var director: Native.ShowDirector { audioEnabled: false }
+    Component.onCompleted: {
+        if (director.shellNames.length !== 4 || director.shellIndex("palm") !== 1 || director.shellIndex("unknown") !== -1)
+            throw new Error("Shell metadata failed")
+        for (var shell = 0; shell < 4; ++shell) {
+            director.shellType = shell
+            view.shellType = shell
+            if (director.shellType !== shell || view.shellType !== shell || !director.shellName)
+                throw new Error("Shell selection failed")
+            director.seek(director.previewTime)
+        }
+        director.shellType = 99
+        view.shellType = -1
+        if (director.shellType !== 3 || view.shellType !== 0) throw new Error("Shell bounds failed")
+        director.volume = -1
+        if (director.volume !== 0) throw new Error("Volume lower bound failed")
+        director.volume = 2
+        if (director.volume !== 1) throw new Error("Volume upper bound failed")
+        director.launch()
+        if (!director.running || director.time !== 0) throw new Error("Launch failed")
+        director.pause()
+        if (director.running) throw new Error("Pause failed")
+        director.seek(3.7)
+        if (Math.abs(director.time-3.7)>0.001) throw new Error("Native director did not load")
+        director.resume()
+        if (!director.running) throw new Error("Resume failed")
+        director.pause()
+        view.time = 99
+        if (view.time !== director.duration) throw new Error("View time upper bound failed")
+        console.log("PASS: relocatable native QML import")
+        Qt.quit()
+    }
+}

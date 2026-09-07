@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "shilai_li.fireworks",
+  "name": "Omarchy Fireworks",
+  "version": "0.1.0",
+  "author": "shilai_li",
+  "description": "Authored chrysanthemums, palms, and willows with changing colors and golden crackle",
+  "kinds": ["overlay", "bar-widget"],
+  "keepLoaded": true,
+  "entryPoints": {"overlay": "Fireworks.qml", "barWidget": "BarWidget.qml"},
+  "barWidget": {"displayName": "Fireworks", "description": "Launch the selected firework shell", "category": "Other", "allowMultiple": false, "defaultSection": "right"}
+}
