@@ -127,7 +127,10 @@ overrides that choice for one launch without changing the saved preference:
 
 ```bash
 omarchy-shell shell summon shilai_li.fireworks '{"shell":"palm","muted":true}'
+omarchy-shell shell call shilai_li.fireworks close ""
 ```
+
+`close` stops the current show and dismisses the settings overlay.
 
 Preferences are stored in `$XDG_CONFIG_HOME/omarchy-fireworks/settings.ini`
 (normally `~/.config/omarchy-fireworks/settings.ini`).
@@ -144,7 +147,9 @@ Native-library updates require a shell restart. Avoid overwriting shared
 libraries while the shell has them loaded; stage an updated bundle and replace
 it while the shell is stopped. QML-only settings changes can hot-reload normally.
 
-See [docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md) for the current shell
+See [docs/INSTALL-VERIFICATION.md](docs/INSTALL-VERIFICATION.md) for the
+installed-shell integration evidence,
+[docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md) for the current shell
 catalog, [docs/COLOR-VERIFICATION.md](docs/COLOR-VERIFICATION.md) for the earlier
 prismatic milestone, and [docs/VERIFICATION.md](docs/VERIFICATION.md) for the
 original golden-willow baseline.

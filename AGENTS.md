@@ -48,8 +48,8 @@ measuring/testing them. Update the checklist as evidence becomes available.
 
 Verified 2026-09-06 on Intel Arc B390: Vulkan captures and an OpenGL preview /
 temporary Quickshell overlay. See [docs/VERIFICATION.md](docs/VERIFICATION.md).
-The bundle is not installed in the running Omarchy shell; live audio audition,
-installed-shell IPC/bar interaction, and frame-rate targets remain unverified.
+The bundle is now installed and enabled in the running Omarchy shell; see
+Milestone 2.1. Frame-rate targets remain unmeasured.
 
 ## Milestone 1.1 — Prismatic color
 
@@ -74,7 +74,21 @@ See [docs/COLOR-VERIFICATION.md](docs/COLOR-VERIFICATION.md).
 Verified 2026-09-07: three passing test suites, four Vulkan shell capture sets,
 and an isolated OpenGL overlay running all three new shells through cleanup.
 See [docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md) for evidence and limits.
-Installed-shell controls, live audio audition, and frame-rate targets remain unverified.
+Frame-rate targets remain unmeasured; installed-shell integration is covered by
+Milestone 2.1.
+
+### Milestone 2.1 — Installed-shell integration
+
+- [x] Bundle installed and enabled in the running Omarchy shell.
+- [x] Bar widget present; native renderer initializes in the shell process.
+- [x] All four shells and the settings view driven through live `summon` IPC.
+- [x] Live PipeWire audio stream in the documented format.
+- [x] Overlay, layer-surface, and audio cleanup after each show.
+
+Verified 2026-09-07 on the running shell with OpenGL on Intel Arc B390.
+See [docs/INSTALL-VERIFICATION.md](docs/INSTALL-VERIFICATION.md). Frame-rate
+targets, multi-monitor overlay behavior, and pointer-driven bar interaction
+remain unverified.
 
 ### Subsequent work
 
