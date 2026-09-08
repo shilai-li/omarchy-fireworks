@@ -10,6 +10,10 @@ Item {
     property real firstTime: 0
     property real visibleOrigin: 0
     Plugin.LaunchPool { id: randomPool; sound: false }
+    // A catalog size fixed here rather than read from the director: this test
+    // is about the schedule, and should not change when a shell is added.
+    Plugin.LaunchPool { id: displayPool; sound: false; shellCount: 10 }
+    property int idleTicks: 0
     Connections {
         target: {
             var revision = randomPool.slotRevision
@@ -29,6 +33,25 @@ Item {
         randomPool.launch(0, true, 0, true)
         check(!randomPool.slot(0).ready,
               "a pending random launch must not render a provisional rocket")
+
+        // A schedule that peaked above the slot ceiling would evict its own
+        // shells in mid-air, so the table and the capacity are checked against
+        // each other rather than trusted to stay in step.
+        for (var d = 0; d < displayPool.displays.length; ++d) {
+            var plan = displayPool.displays[d]
+            check(plan.lifts.length > 0, "every display must launch something: " + plan.name)
+            check(displayPool.peakConcurrency(plan) <= displayPool.capacity,
+                  "display must not outgrow the slot capacity: " + plan.name)
+        }
+        var firstPick = displayPool.mixedShell(0)
+        check(firstPick >= 0 && firstPick < 10, "a mixed pick must name a real shell")
+        check(displayPool.mixedShell(1) !== firstPick,
+              "a mixed display must not fire the same shell every step")
+        displayPool.launchDisplay(0, 3, true, 0, false)
+        check(displayPool.activeCount === 1 && !displayPool.scheduled,
+              "one shell must fire once and queue nothing")
+        check(displayPool.slot(0).controller.shellType === 3,
+              "one shell must use the chosen shell")
     }
     Timer {
         interval: 200; running: true; repeat: true
@@ -69,9 +92,42 @@ Item {
                     clock.seek(clock.duration - 0.03)
                     clock.resume()
                 }
-            } else {
+            } else if (phase === 4) {
                 check(pool.activeCount === 0, "last shell finishing must release the overlay")
-                console.log("PASS: overlapping clocks, styles, positions, mute, capacity, cancellation, cleanup")
+                // Drive the full show's queue by hand rather than waiting out
+                // its schedule: the test budget is ten seconds and the display
+                // takes fifteen to lift its last shell.
+                displayPool.stop()
+                displayPool.launchDisplay(2, 5, true, 0, false)
+                check(displayPool.scheduled, "a full show must queue the shells behind the first")
+                var guard = 0
+                while (displayPool.scheduled && ++guard < 40) displayPool.fireStep()
+                check(!displayPool.scheduled, "a display must finish its queue")
+                check(guard === displayPool.displays[2].lifts.length - 1,
+                      "a display must fire each of its lifts once")
+                // The newest slots ran the finale, and a finale is the shell
+                // that was actually chosen even when the rest was mixed.
+                var newest = []
+                for (var i = 0; i < displayPool.capacity; ++i) newest.push(displayPool.slot(i))
+                newest.sort(function(a, b) { return b.serial - a.serial })
+                for (var f = 0; f < displayPool.displays[2].finale; ++f)
+                    check(newest[f].controller.shellType === 5,
+                          "a mixed display must end on the chosen shell")
+                displayPool.stop()
+                check(!displayPool.scheduled && displayPool.activeCount === 0,
+                      "stopping must cancel a queued display and its shells")
+                displayPool.launchDisplay(1, 2, true, 0, false)
+                check(displayPool.scheduled && displayPool.activeCount === 1,
+                      "a volley must fire once and queue the rest")
+                displayPool.stop()
+            } else if (phase === 5) {
+                // Past the volley's own 1.3 s step, so a cancelled schedule
+                // that was still armed would have fired by now.
+                if (++idleTicks < 9) return
+                check(!displayPool.scheduled && displayPool.activeCount === 0,
+                      "a cancelled display must stay cancelled")
+            } else {
+                console.log("PASS: overlapping clocks, styles, positions, mute, capacity, cancellation, cleanup, display schedules")
                 Qt.quit()
             }
             ++phase

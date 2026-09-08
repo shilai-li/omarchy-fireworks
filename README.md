@@ -81,8 +81,11 @@ HDR scene → bloom → tone mapping → transparent overlay
   of monitor count. The initial sound delay models a listener 120 metres away.
   Audio preparation is cached by seed and shell, with shell-specific crackle timing.
   Playback currently requires an output supporting 48 kHz stereo 16-bit PCM.
-- Replaying replaces the current show. Overlapping shells and show choreography
-  are later milestones.
+- **Display** decides how much one trigger sends up: `one shell`, a `volley` of
+  four of the chosen shell, or a `full show` of six — mixed from the catalog and
+  ending on a two-shell finale of the one you picked. The schedules live in one
+  table in `plugin/LaunchPool.qml` and are spaced so no more than four shells are
+  ever in the air at once, because the fifth would evict a shell still burning.
 
 QRhi is a Qt API with limited binary compatibility. Rebuild the native module
 after Qt upgrades; do not carry its binaries between incompatible Qt builds.
@@ -169,18 +172,22 @@ approach follows [Omafetti](https://github.com/weedwhitesandwine/omafetti)'s
 
 Inside the card, Space launches, Escape closes, and R starts recording. Shell,
 sound, glow, and light save as you set them; only the hotkey reaches outside the
-plugin's own INI. A named-shell payload overrides the saved shell for one launch
-without changing the preference:
+plugin's own INI. A payload overrides the saved shell or display
+size for one launch without changing either preference:
 
 ```bash
 omarchy-shell shell summon shilai_li.fireworks '{"shell":"palm","muted":true}'
+omarchy-shell shell summon shilai_li.fireworks '{"size":"full show"}'
+omarchy-shell shell summon shilai_li.fireworks '{"shell":"heart","size":"volley"}'
 omarchy-shell shell call shilai_li.fireworks close ""
 ```
 
 `close` stops all fireworks and dismisses the settings overlay.
 
-Repeated launches overlap on the desktop: up to four shells keep independent
-timelines, styles, positions, and sound. A fifth launch replaces the oldest.
+Launches overlap on the desktop, whether they come from one trigger or several:
+up to four shells keep independent timelines, styles, positions, and sound. A
+fifth launch replaces the oldest, which is why the built-in displays are spaced
+to stay at four.
 The audio level is shared across active shells to retain mixing headroom.
 `close` stops all active and pending launches. The standalone preview still
 replays a single shell for inspection.

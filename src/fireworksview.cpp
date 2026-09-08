@@ -1,7 +1,20 @@
 #include "fireworksview.h"
 #include "renderer.h"
+#include <QDebug>
+#include <QElapsedTimer>
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+
+namespace {
+// Off unless FIREWORKS_PROFILE is set, so the timer and the log line cost
+// nothing in normal use. Several of these views can be alive at once, one per
+// shell per monitor, and until now nobody had measured what that costs.
+bool profilingEnabled() {
+    static const bool on = qEnvironmentVariableIsSet("FIREWORKS_PROFILE");
+    return on;
+}
+} // namespace
 
 class ViewRenderer : public QQuickRhiItemRenderer {
     fireworks::Simulation simulation;
@@ -10,6 +23,9 @@ class ViewRenderer : public QQuickRhiItemRenderer {
     double targetTime = 0;
     float wind = 2.2f;
     bool ready = false;
+    QElapsedTimer profileClock;
+    qint64 profileNanos = 0;
+    int profileFrames = 0;
     void initialize(QRhiCommandBuffer *) override { ready = renderer.initialize(rhi(), renderTarget()); }
     void synchronize(QQuickRhiItem *item) override {
         auto *view = static_cast<FireworksView *>(item);
@@ -30,8 +46,25 @@ class ViewRenderer : public QQuickRhiItemRenderer {
     void render(QRhiCommandBuffer *cb) override {
         if (!ready)
             return;
+        const bool profile = profilingEnabled();
+        if (profile)
+            profileClock.restart();
         simulation.advanceTo(targetTime, 180);
         renderer.render(cb, simulation, settings);
+        if (profile) {
+            // Wall time to advance the show and record its draw calls. This is
+            // CPU-side work, not GPU completion — the command buffer is
+            // submitted later — so read it as the per-view cost this thread
+            // adds to a frame, not as the whole frame's budget.
+            profileNanos += profileClock.nsecsElapsed();
+            if (++profileFrames >= 120) {
+                qInfo("Fireworks profile: %d frames, mean %.3f ms/frame, %zu stars, %zu embers",
+                      profileFrames, double(profileNanos) / profileFrames / 1e6,
+                      simulation.stars().size(), simulation.embers().size());
+                profileNanos = 0;
+                profileFrames = 0;
+            }
+        }
         if (simulation.time() + fireworks::Simulation::Step < targetTime)
             update();
     }

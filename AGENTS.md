@@ -127,6 +127,18 @@ Verified 2026-09-08. See [docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md
 Verified 2026-09-08. The default launch moved from x=-26 to true centre, so
 every capture set was retaken. See [docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md).
 
+### Milestone 4 — One trigger, a whole display
+
+- [x] `Display` setting: one shell, a volley of four, or a full show of six.
+- [x] Schedules in one table in `LaunchPool`, spaced to peak at the slot ceiling.
+- [x] Mixed displays draw from the catalog and end on the chosen shell.
+- [x] Stopping cancels queued launches as well as flying ones.
+- [x] `size` accepted in the summon payload alongside `shell`.
+- [x] Measured GPU cost per concurrent shell, and sized the displays to it.
+
+Verified 2026-09-08 on the installed shell.
+See [docs/DISPLAY-VERIFICATION.md](docs/DISPLAY-VERIFICATION.md).
+
 ### Subsequent work
 
 1. Show choreography, coordinated monitor views, and richer sound design.

@@ -38,18 +38,29 @@ Item {
     readonly property string fontFamily: Style.font.menuFamily
 
     // -------------------------------------------------------------- lifecycle
-    readonly property bool flying: launches.activeCount > 0
+    readonly property bool flying: launches.activeCount > 0 || launches.scheduled
     property bool settingsOpen: false
     readonly property int shellType: director.shellType
 
     // The shell reads this to decide whether a summon should open or hide us.
     readonly property bool opened: flying || settingsOpen
 
-    function launch(quiet, shell) {
+    function launch(quiet, shell, size) {
         var selected = shell === undefined ? preferences.shellType : director.shellIndex(String(shell))
         if (selected < 0) { console.warn("Fireworks: unknown shell", shell); return }
+        var display = size === undefined ? preferences.displaySize : root.displayIndex(size)
+        if (display < 0) { console.warn("Fireworks: unknown display size", size); return }
         director.shellType = selected
-        launches.launch(selected, quiet === true, preferences.launchX, preferences.randomLaunch)
+        launches.launchDisplay(display, selected, quiet === true, preferences.launchX,
+                               preferences.randomLaunch)
+    }
+
+    // Named sizes for the IPC payload, so a script can ask for one shell
+    // without disturbing the saved preference — as a named shell already does.
+    function displayIndex(name) {
+        for (var i = 0; i < launches.displays.length; ++i)
+            if (launches.displays[i].name === String(name)) return i
+        return -1
     }
 
     function openSettings() {
@@ -70,7 +81,7 @@ Item {
         var payload = {}
         try { payload = JSON.parse(payloadJson || "{}") || {} } catch (e) {}
         if (payload.view === "settings") root.openSettings()
-        else root.launch(payload.muted === true, payload.shell)
+        else root.launch(payload.muted === true, payload.shell, payload.size)
     }
 
     function close() {
@@ -95,6 +106,8 @@ Item {
         property int shellType: 0
         // Where the shell goes up, across the frame: -1 hard left, +1 hard
         // right. `randomLaunch` ignores it and picks a spot per launch.
+        // 0 one shell, 1 volley, 2 full show — indexes LaunchPool.displays.
+        property int displaySize: 0
         property real launchX: 0
         property bool randomLaunch: false
         // What the marked block in bindings.lua was last written with. The
@@ -190,6 +203,7 @@ Item {
         id: launches
         sound: preferences.sound
         volume: preferences.volume
+        shellCount: director.shellNames.length
     }
 
     // One layer per monitor. No keyboard focus and an empty input region, so
@@ -480,6 +494,25 @@ Item {
                     }
 
                     Row {
+                        spacing: Style.spacing.md
+                        SettingLabel { text: "Display" }
+                        Row {
+                            spacing: Style.space(4)
+                            anchors.verticalCenter: parent.verticalCenter
+                            Repeater {
+                                model: launches.displays
+                                SettingPill {
+                                    required property int index
+                                    required property var modelData
+                                    label: modelData.name
+                                    active: preferences.displaySize === index
+                                    onPicked: preferences.displaySize = index
+                                }
+                            }
+                        }
+                    }
+
+                    Row {
                         width: parent.width
                         spacing: Style.spacing.md
                         SettingLabel { text: "Launch" }
@@ -541,7 +574,7 @@ Item {
                     SettingCaption {
                         width: parent.width
                         opacity: 0.55
-                        text: "Space launches, Escape closes. Shell, sound, and look save as you set them. Recording a hotkey also rewrites Fireworks' own marked block in ~/.config/hypr/bindings.lua — nothing else in that file is touched."
+                        text: "Space launches, Escape closes. A volley or a full show sends several shells up from one trigger, spread so no more than four are ever in the air at once. Shell, sound, and look save as you set them. Recording a hotkey also rewrites Fireworks' own marked block in ~/.config/hypr/bindings.lua — nothing else in that file is touched."
                     }
 
                     Row {
