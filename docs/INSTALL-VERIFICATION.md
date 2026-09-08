@@ -60,9 +60,11 @@ omarchy-shell shell call shilai_li.fireworks close ""
 - Audio was verified as a live, uncorked 48 kHz stereo stream in the expected
   format. Its musical quality and the 120-metre delay were not judged by ear in
   a recorded, repeatable way.
-- Bar-widget *pointer* behavior (left-click launch, right-click settings) was not
-  driven synthetically. The widget is present and its `openSettings`/`launch`
-  entry points were exercised through IPC, which is the same code path.
+- Recording a hotkey inside the card was driven with a `uinput` keyboard and the
+  bar icon with a `uinput` pointer, because `wtype`'s virtual-keyboard input is
+  delivered straight to the focused client and never reaches Hyprland's keybind
+  matching — Omafetti's own hotkey did not fire from `wtype` either. A kernel
+  `uinput` device goes through the compositor's normal path, and did.
 - Frame-rate targets on the live desktop are still unmeasured. No GPU or CPU
   frame-time instrumentation was run in the shell process.
 - A single monitor was connected. Multi-monitor overlay behavior in the
@@ -72,3 +74,34 @@ omarchy-shell shell call shilai_li.fireworks close ""
   This is a capture artifact, not a plugin defect.
 - Native-library updates still require replacing the bundle while the shell is
   stopped; that upgrade path was not exercised here.
+
+## Milestone 2.2 — bar icon opens settings; recordable hotkey
+
+Verified 2026-09-08 on the same machine and shell.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Bar icon opens the settings card | pass | `uinput` pointer click at the widget's own reported position (`debugBarGeometry`: x 1248, w 23); only the `omarchy-fireworks-settings` layer appeared and the renderer line count did not change |
+| Bar icon never launches a show | pass | same run: no `omarchy-fireworks` show layer, no new `Fireworks renderer` line |
+| Second click closes the card | pass | no fireworks layer surfaces after the second click |
+| Recording captures a real combination | pass | `R` then SUPER+ALT+W through a `uinput` keyboard; the card showed `SUPER + ALT + W` |
+| Binding written correctly | pass | marked block in `bindings.lua`; Omafetti's adjacent block untouched |
+| Hyprland registers it | pass | `hyprctl binds`: modmask 72, key W |
+| Pressing it launches a show | pass | crimson chrysanthemum over the desktop; `Fireworks renderer` line at the keypress |
+| Clearing removes everything | pass | block gone, INI key emptied, Hyprland binding gone, file byte-identical to the pre-test backup |
+| Refusal is reported honestly | pass | with `bindings.lua` absent, the card showed the script's own message rather than "Bound." |
+| `hyprctl reload` does not restart the shell | pass | same shell PID before and after |
+
+Limits specific to this milestone:
+
+- The hotkey validation was exercised against injection-shaped inputs (embedded
+  quotes, newlines, shell metacharacters, two keys, no modifier, over-length)
+  through the script directly, with the bindings file unchanged after each
+  refusal. The QML pattern is the same expression, but was not fuzzed on its own.
+- No conflict detection: recording a combination another binding already owns
+  writes it anyway, and Hyprland will run whichever binding wins. The card warns
+  about this in words only.
+- Moving `bindings.lua` out of the way to test the refusal path made Hyprland's
+  config watcher reload against a missing file and raise a config-error banner.
+  That is an artifact of the test, not of the plugin, and `hyprctl reload`
+  cleared it once the file was back.

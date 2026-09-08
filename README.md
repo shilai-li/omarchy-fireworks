@@ -121,9 +121,33 @@ omarchy plugin enable shilai_li.fireworks
 omarchy-shell shell summon shilai_li.fireworks
 ```
 
-Left-click the star icon to launch; right-click it for persistent settings.
-The settings selector determines the default shell. A named-shell payload
-overrides that choice for one launch without changing the saved preference:
+Click the star icon to open the settings card. The icon never launches a show:
+an icon between the tray and the clock is too easy to hit by accident for
+something that then covers every monitor for half a minute. Launching is the
+hotkey's job.
+
+In the card, **record (R)** captures a key combination and binds it; **clear**
+removes it. The binding lives in a marked block in `~/.config/hypr/bindings.lua`
+that only this plugin writes:
+
+```lua
+-- >>> fireworks hotkey (managed by Omarchy Fireworks settings — change it there)
+o.bind("SUPER + ALT + W", "Fireworks (launch a shell)", "omarchy-shell shell summon shilai_li.fireworks")
+-- <<< fireworks hotkey
+```
+
+`plugin/fireworks-ctl.sh` does that writing, and refuses a bindings.lua it does
+not recognise — missing, not a regular file the user owns, over a megabyte, or
+with its marked block already damaged — rather than guessing. Clearing restores
+the file byte for byte. The card reports the script's own refusal message when
+it declines, instead of claiming a write that did not happen. The block-editing
+approach follows [Omafetti](https://github.com/weedwhitesandwine/omafetti)'s
+`omafetti-ctl.sh` (MIT), which solved this first.
+
+Inside the card, Space launches, Escape closes, and R starts recording. Shell,
+sound, glow, and light save as you set them; only the hotkey reaches outside the
+plugin's own INI. A named-shell payload overrides the saved shell for one launch
+without changing the preference:
 
 ```bash
 omarchy-shell shell summon shilai_li.fireworks '{"shell":"palm","muted":true}'

@@ -90,6 +90,20 @@ See [docs/INSTALL-VERIFICATION.md](docs/INSTALL-VERIFICATION.md). Frame-rate
 targets, multi-monitor overlay behavior, and pointer-driven bar interaction
 remain unverified.
 
+### Milestone 2.2 — Bar icon opens settings; recordable hotkey
+
+- [x] The bar icon opens the settings card and never launches a show.
+- [x] In-card hotkey recording, written to a marked block in `bindings.lua`
+      by `plugin/fireworks-ctl.sh`; clearing restores the file byte for byte.
+- [x] The card reports the helper's real refusal instead of a false success.
+- [x] Card follows the active Omarchy theme (`qs.Commons` / `qs.Ui`) rather
+      than carrying its own colours.
+- [x] Keyboard-reachable card: Space launches, Escape closes, R records.
+
+Verified 2026-09-08 against the installed shell, driving the bar icon with a
+`uinput` pointer and the hotkey with a `uinput` keyboard.
+See [docs/INSTALL-VERIFICATION.md](docs/INSTALL-VERIFICATION.md).
+
 ### Subsequent work
 
 1. Additional authored shells: rings and layered bursts.

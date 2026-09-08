@@ -1,39 +1,93 @@
 import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
 import QtCore
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
+import qs.Commons
+import qs.Ui
 import "native" as Native
 import "."
 
+// Omarchy Fireworks — authored shells fired over the desktop.
+//
+// Two surfaces, deliberately different. The show is a click-through layer with
+// no keyboard focus, one per monitor, so a launch never interrupts what you
+// were doing: you can keep typing straight through it. The settings card is an
+// ordinary focused panel, opened from the bar icon, where the shell, the
+// hotkey, and the look of the show are chosen.
 Item {
     id: root
+
+    readonly property string pluginDir: {
+        var u = String(Qt.resolvedUrl("."))
+        return decodeURIComponent(u.replace(/^file:\/\//, "")).replace(/\/$/, "")
+    }
+
+    // ------------------------------------------------------------------ theme
+    // The card follows the active Omarchy theme rather than carrying colours of
+    // its own; only the fireworks themselves are authored.
+    readonly property color foreground: Color.menu.text
+    readonly property color background: Color.menu.background
+    readonly property color border: Color.menu.border
+    readonly property color scrim: Color.menu.scrim
+    readonly property color selectedBackground: Color.menu.selectedBackground
+    readonly property color selectedText: Color.menu.selectedText
+    readonly property var borderSpec: Border.surfaceSpec("menu", "border", border, Math.max(1, Style.space(2)))
+    readonly property int cornerRadius: Style.cornerRadius
+    readonly property int labelWidth: Style.space(92)
+    readonly property string fontFamily: Style.font.menuFamily
+
+    // -------------------------------------------------------------- lifecycle
     property bool flying: false
     property bool settingsOpen: false
     property bool mutedForShow: false
     readonly property int shellType: director.shellType
+
+    // The shell reads this to decide whether a summon should open or hide us.
     readonly property bool opened: flying || settingsOpen
+
     function launch(quiet, shell) {
         var selected = shell === undefined ? preferences.shellType : director.shellIndex(String(shell))
         if (selected < 0) { console.warn("Fireworks: unknown shell", shell); return }
         director.pause()
         director.shellType = selected
-        mutedForShow=quiet===true
-        flying=true
+        root.mutedForShow = quiet === true
+        root.flying = true
         launchDelay.restart()
     }
-    function openSettings() { settingsOpen=true }
-    function open(payloadJson) {
-        var payload={}
-        try { payload=JSON.parse(payloadJson || "{}") || {} } catch(e) {}
-        if(payload.view === "settings") openSettings()
-        else launch(payload.muted===true, payload.shell)
-    }
-    function close() { launchDelay.stop(); director.pause(); flying=false; settingsOpen=false }
-    Component.onCompleted: FireworksState.overlay=root
-    Component.onDestruction: { if(FireworksState.overlay===root) FireworksState.overlay=null }
 
+    function openSettings() {
+        root.capturing = false
+        root.captureNote = ""
+        root.settingsOpen = true
+    }
+
+    function closeSettings() {
+        root.settingsOpen = false
+        root.capturing = false
+    }
+
+    // Reached from `omarchy-shell shell summon`, which is what the hotkey runs.
+    // A bare summon launches; the bar icon calls openSettings() directly rather
+    // than coming through here.
+    function open(payloadJson) {
+        var payload = {}
+        try { payload = JSON.parse(payloadJson || "{}") || {} } catch (e) {}
+        if (payload.view === "settings") root.openSettings()
+        else root.launch(payload.muted === true, payload.shell)
+    }
+
+    function close() {
+        launchDelay.stop()
+        director.pause()
+        root.flying = false
+        root.closeSettings()
+    }
+
+    Component.onCompleted: FireworksState.overlay = root
+    Component.onDestruction: { if (FireworksState.overlay === root) FireworksState.overlay = null }
+
+    // ---------------------------------------------------------------- settings
     Settings {
         id: preferences
         // Quickshell does not set an application organization for QSettings.
@@ -45,14 +99,103 @@ Item {
         property real bloom: 0.85
         property real exposure: 0.95
         property int shellType: 0
+        // What the marked block in bindings.lua was last written with. The
+        // block itself is the real state; this is how the card knows what to
+        // show without parsing Lua.
+        property string shortcut: ""
     }
+
+    // ------------------------------------------------------------------ hotkey
+    // A hotkey is a fixed shape: one or more modifiers, then exactly one key.
+    // The value ends up inside a Lua string in bindings.lua, so anything not of
+    // that shape is refused rather than escaped — there is no reason for it to
+    // exist. fireworks-ctl.sh checks the same shape again before it writes.
+    readonly property var shortcutPattern:
+        /^(SUPER|CTRL|ALT|SHIFT)( \+ (SUPER|CTRL|ALT|SHIFT))* \+ ([A-Z0-9]|F([1-9]|1[0-2])|SPACE|RETURN|ENTER|TAB|ESCAPE|BACKSPACE|DELETE|INSERT|HOME|END|PAGE_UP|PAGE_DOWN|UP|DOWN|LEFT|RIGHT|COMMA|PERIOD|SLASH|MINUS|EQUAL|SEMICOLON|APOSTROPHE|GRAVE|BRACKETLEFT|BRACKETRIGHT|BACKSLASH)$/
+
+    property bool capturing: false
+    property string captureNote: ""
+
+    readonly property string shortcut:
+        root.validShortcut(preferences.shortcut) ? preferences.shortcut : ""
+
+    function validShortcut(s) {
+        return typeof s === "string" && s.length <= 40 && root.shortcutPattern.test(s)
+    }
+
+    // Recording a key is the whole gesture — you pressed "record", then pressed
+    // the keys — so the binding is written there and then rather than behind a
+    // second Apply. Everything else on this card is the plugin's own INI and
+    // saves as you touch it; the hotkey is the one setting that reaches outside,
+    // and it reaches exactly one marked block.
+    function captureKey(event) {
+        if (event.key === Qt.Key_Escape) { root.capturing = false; root.captureNote = ""; return }
+        var mods = []
+        if (event.modifiers & Qt.MetaModifier) mods.push("SUPER")
+        if (event.modifiers & Qt.ControlModifier) mods.push("CTRL")
+        if (event.modifiers & Qt.AltModifier) mods.push("ALT")
+        if (event.modifiers & Qt.ShiftModifier) mods.push("SHIFT")
+        var name = ""
+        if (event.key >= Qt.Key_A && event.key <= Qt.Key_Z) name = String.fromCharCode(65 + (event.key - Qt.Key_A))
+        else if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) name = String.fromCharCode(48 + (event.key - Qt.Key_0))
+        else if (event.key >= Qt.Key_F1 && event.key <= Qt.Key_F12) name = "F" + (event.key - Qt.Key_F1 + 1)
+        if (name === "") return
+        if (mods.length === 0) { root.captureNote = "Add a modifier — SUPER, CTRL or ALT"; return }
+        root.bindShortcut(mods.join(" + ") + " + " + name)
+    }
+
+    function bindShortcut(keys) {
+        if (!root.validShortcut(keys)) return
+        preferences.shortcut = keys
+        root.runCtl(["bind", keys], "Bound. Written to ~/.config/hypr/bindings.lua.")
+    }
+
+    function clearShortcut() {
+        preferences.shortcut = ""
+        root.runCtl(["unbind"], "Cleared. The block is gone from ~/.config/hypr/bindings.lua.")
+    }
+
+    function runCtl(args, okNote) {
+        root.capturing = false
+        root.captureNote = "Writing…"
+        hotkeyCtl.okNote = okNote
+        hotkeyCtl.running = false
+        hotkeyCtl.command = ["bash", root.pluginDir + "/fireworks-ctl.sh"].concat(args)
+        hotkeyCtl.running = true
+    }
+
+    // execDetached would have the card report a success it cannot know about.
+    // fireworks-ctl.sh refuses to touch a bindings.lua it does not recognise —
+    // missing, not ours, or with its marked block already damaged — and says
+    // why on stderr. Running it as a Process is how that reason reaches the
+    // person who needs it, instead of a cheerful "Bound." over a file that was
+    // never written. Silence on stderr is the success case.
+    Process {
+        id: hotkeyCtl
+        property string okNote: ""
+        stderr: StdioCollector {
+            waitForEnd: true
+            onStreamFinished: {
+                var why = String(text || "").trim()
+                root.captureNote = why !== "" ? why : hotkeyCtl.okNote
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------- show
     Native.ShowDirector {
         id: director
         audioEnabled: preferences.sound && !root.mutedForShow
         volume: preferences.volume
-        onFinished: root.flying=false
+        onFinished: root.flying = false
     }
+
+    // The panels need one layout pass before their views know how big the
+    // screen is; launching into a zero-sized view would render nothing.
     Timer { id: launchDelay; interval: 80; onTriggered: director.launch() }
+
+    // One layer per monitor. No keyboard focus and an empty input region, so
+    // the show plays in front of everything without catching a single click.
     Variants {
         model: root.flying ? Quickshell.screens : []
         delegate: Component {
@@ -77,7 +220,85 @@ Item {
             }
         }
     }
+
+    // ------------------------------------------------------------- components
+    component SettingLabel: Text {
+        textFormat: Text.PlainText
+        width: root.labelWidth
+        anchors.verticalCenter: parent.verticalCenter
+        color: root.foreground
+        opacity: 0.75
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.body
+        elide: Text.ElideRight
+    }
+
+    component SettingPill: Rectangle {
+        id: pill
+        property string label
+        property bool active: false
+        signal picked()
+        width: pillLabel.width + Style.spacing.lg * 2
+        height: Style.space(32)
+        radius: root.cornerRadius
+        color: pill.active ? root.selectedBackground : "transparent"
+        border.color: pill.active ? root.foreground : root.border
+        border.width: pill.active ? 1 : 0
+
+        Text {
+            id: pillLabel
+            textFormat: Text.PlainText
+            anchors.centerIn: parent
+            text: pill.label
+            color: pill.active ? root.selectedText : root.foreground
+            opacity: pill.active ? 1 : 0.55
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.body
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: pill.picked()
+        }
+    }
+
+    component SettingCaption: Text {
+        textFormat: Text.PlainText
+        wrapMode: Text.WordWrap
+        color: root.foreground
+        opacity: 0.6
+        font.family: root.fontFamily
+        font.pixelSize: Style.font.caption
+    }
+
+    // A labelled slider row. The three of them differ only in range and in
+    // where the value goes, so the row itself is written once.
+    component SettingSlider: Row {
+        id: sliderRow
+        property alias label: rowLabel.text
+        property real minimum: 0
+        property real maximum: 1
+        property real value: 0
+        signal moved(real value)
+        spacing: Style.spacing.md
+        SettingLabel { id: rowLabel }
+        PanelSlider {
+            // PanelSlider is a bare Item: it has no implicit height of its
+            // own, so an unsized one collapses to nothing.
+            width: Style.space(240)
+            height: Style.space(32)
+            minimum: sliderRow.minimum
+            maximum: sliderRow.maximum
+            value: sliderRow.value
+            step: (sliderRow.maximum - sliderRow.minimum) / 40
+            onMoved: function(v) { sliderRow.moved(v) }
+        }
+    }
+
+    // -------------------------------------------------------- the settings card
     PanelWindow {
+        id: settingsPanel
         visible: root.settingsOpen
         anchors { left: true; right: true; top: true; bottom: true }
         color: "transparent"
@@ -85,47 +306,202 @@ Item {
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
         exclusionMode: ExclusionMode.Ignore
-        Rectangle { anchors.fill: parent; color: "#88000000" }
-        MouseArea { anchors.fill: parent; onClicked: root.settingsOpen=false }
-        Rectangle {
+
+        Rectangle { anchors.fill: parent; color: root.scrim }
+        MouseArea { anchors.fill: parent; onClicked: root.closeSettings() }
+
+        BorderSurface {
+            id: card
+            width: Math.min(Style.space(520), settingsPanel.width - Style.gapsOut * 2)
+            height: Math.min(form.implicitHeight + card.contentTopInset + card.contentBottomInset,
+                             settingsPanel.height - Style.gapsOut * 2)
             anchors.centerIn: parent
-            width: 460; height: form.implicitHeight+56
-            color: "#151820"; radius: 16; border.color: "#39363a"
-            MouseArea { anchors.fill: parent }
-            ColumnLayout {
-                id: form
-                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 28 }
-                spacing: 15
-                Text { text: "Firework shells"; color: "#f0f3ff"; font.pixelSize: 26 }
-                Text { text: "Coordinated colors, changing tips, and gold finishes."; color: "#a4a0a0"; font.pixelSize: 12 }
-                ComboBox {
-                    model: director.shellNames
-                    currentIndex: Math.max(0, Math.min(3, preferences.shellType))
-                    onActivated: preferences.shellType = currentIndex
-                    Layout.fillWidth: true
-                    Accessible.name: "Firework shell"
+            color: root.background
+            borderSpec: root.borderSpec
+            radius: root.cornerRadius
+            padding: Style.space(24)
+
+            MouseArea { anchors.fill: parent; onClicked: {} }
+
+            // BorderSurface exposes its insets but does not apply them —
+            // content has to inset itself or it renders under the border.
+            Item {
+                anchors.fill: parent
+                anchors.topMargin: card.contentTopInset
+                anchors.rightMargin: card.contentRightInset
+                anchors.bottomMargin: card.contentBottomInset
+                anchors.leftMargin: card.contentLeftInset
+                focus: true
+
+                // The card holds exclusive keyboard focus while it is up, on a
+                // desktop driven from the keyboard — so the three things it can
+                // do are reachable without the mouse. R matters most: it starts
+                // the hotkey recording that the next keypress lands in.
+                Keys.priority: Keys.BeforeItem
+                Keys.onPressed: function(event) {
+                    if (root.capturing) {
+                        root.captureKey(event)
+                        event.accepted = true
+                        return
+                    }
+                    if (event.key === Qt.Key_Escape) root.closeSettings()
+                    else if (event.key === Qt.Key_R) { root.capturing = true; root.captureNote = "" }
+                    else if (event.key === Qt.Key_Space
+                             || event.key === Qt.Key_Return
+                             || event.key === Qt.Key_Enter) root.launch()
+                    event.accepted = true
                 }
-                CheckBox {
-                    text: "Play boom and crackle"
-                    palette.windowText: "#bdb7ac"
-                    checked: preferences.sound
-                    onToggled: preferences.sound=checked
-                }
-                RowLayout {
-                    Text { text: "Volume"; color: "#bdb7ac"; Layout.preferredWidth: 70 }
-                    Slider { from: 0; to: 1; value: preferences.volume; onMoved: preferences.volume=value; Layout.fillWidth: true }
-                }
-                RowLayout {
-                    Text { text: "Glow"; color: "#bdb7ac"; Layout.preferredWidth: 70 }
-                    Slider { from: 0; to: 2; value: preferences.bloom; onMoved: preferences.bloom=value; Layout.fillWidth: true }
-                }
-                RowLayout {
-                    Text { text: "Light"; color: "#bdb7ac"; Layout.preferredWidth: 70 }
-                    Slider { from: 0.25; to: 1.8; value: preferences.exposure; onMoved: preferences.exposure=value; Layout.fillWidth: true }
-                }
-                RowLayout {
-                    Button { text: "Launch shell"; onClicked: { root.settingsOpen=false; root.launch() } }
-                    Button { text: "Done"; onClicked: root.settingsOpen=false }
+
+                Column {
+                    id: form
+                    width: parent.width
+                    spacing: Style.spacing.xl
+
+                    Text {
+                        textFormat: Text.PlainText
+                        width: parent.width
+                        text: "✦ Fireworks"
+                        color: root.foreground
+                        font.family: root.fontFamily
+                        font.pixelSize: Style.font.heading
+                    }
+
+                    SettingCaption {
+                        width: parent.width
+                        opacity: 0.75
+                        font.pixelSize: Style.font.body
+                        text: director.shellDescription
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: Style.spacing.md
+                        SettingLabel { text: "Shell" }
+                        Flow {
+                            // Four names of this length do not fit one line on a
+                            // narrow panel, and a Row would draw the last one off
+                            // the edge. Measured from the form, whose width is
+                            // already inside the card's border and padding.
+                            width: form.width - root.labelWidth - Style.spacing.md
+                            spacing: Style.space(4)
+                            Repeater {
+                                model: director.shellNames
+                                SettingPill {
+                                    required property int index
+                                    required property string modelData
+                                    label: modelData
+                                    active: preferences.shellType === index
+                                    onPicked: preferences.shellType = index
+                                }
+                            }
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: Style.spacing.md
+
+                        SettingLabel { text: "Hotkey" }
+
+                        Rectangle {
+                            width: Style.space(190)
+                            height: Style.space(32)
+                            radius: root.cornerRadius
+                            color: "transparent"
+                            border.color: root.border
+                            border.width: 1
+
+                            Text {
+                                textFormat: Text.PlainText
+                                anchors.centerIn: parent
+                                text: root.capturing ? "press your keys…"
+                                    : (root.shortcut !== "" ? root.shortcut : "none set")
+                                color: root.foreground
+                                opacity: root.capturing || root.shortcut === "" ? 0.6 : 1
+                                font.family: root.fontFamily
+                                font.pixelSize: Style.font.body
+                            }
+                        }
+
+                        SettingPill {
+                            label: root.capturing ? "cancel" : "record (R)"
+                            active: true
+                            onPicked: { root.capturing = !root.capturing; root.captureNote = "" }
+                        }
+
+                        SettingPill {
+                            label: "clear"
+                            visible: root.shortcut !== ""
+                            onPicked: root.clearShortcut()
+                        }
+                    }
+
+                    SettingCaption {
+                        width: parent.width
+                        visible: root.captureNote !== "" || root.capturing
+                        text: root.captureNote !== "" ? root.captureNote
+                            : "Pick a combination nothing else uses — an already-taken key will trigger its old action instead of reaching this card."
+                    }
+
+                    Row {
+                        spacing: Style.spacing.md
+                        SettingLabel { text: "Sound" }
+                        Row {
+                            spacing: Style.space(4)
+                            anchors.verticalCenter: parent.verticalCenter
+                            SettingPill {
+                                label: "boom and crackle"
+                                active: preferences.sound
+                                onPicked: preferences.sound = true
+                            }
+                            SettingPill {
+                                label: "silent"
+                                active: !preferences.sound
+                                onPicked: preferences.sound = false
+                            }
+                        }
+                    }
+
+                    SettingSlider {
+                        label: "Volume"
+                        visible: preferences.sound
+                        value: preferences.volume
+                        onMoved: function(v) { preferences.volume = v }
+                    }
+
+                    SettingSlider {
+                        label: "Glow"
+                        maximum: 2
+                        value: preferences.bloom
+                        onMoved: function(v) { preferences.bloom = v }
+                    }
+
+                    SettingSlider {
+                        label: "Light"
+                        minimum: 0.25
+                        maximum: 1.8
+                        value: preferences.exposure
+                        onMoved: function(v) { preferences.exposure = v }
+                    }
+
+                    SettingCaption {
+                        width: parent.width
+                        opacity: 0.55
+                        text: "Space launches, Escape closes. Shell, sound, and look save as you set them. Recording a hotkey also rewrites Fireworks' own marked block in ~/.config/hypr/bindings.lua — nothing else in that file is touched."
+                    }
+
+                    Row {
+                        spacing: Style.spacing.md
+                        SettingPill {
+                            label: "✦ launch now"
+                            active: true
+                            onPicked: root.launch()
+                        }
+                        SettingPill {
+                            label: "Done"
+                            onPicked: root.closeSettings()
+                        }
+                    }
                 }
             }
         }
