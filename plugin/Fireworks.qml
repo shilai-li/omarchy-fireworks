@@ -99,6 +99,10 @@ Item {
         property real bloom: 0.85
         property real exposure: 0.95
         property int shellType: 0
+        // Where the shell goes up, across the frame: -1 hard left, +1 hard
+        // right. `randomLaunch` ignores it and picks a spot per launch.
+        property real launchX: 0
+        property bool randomLaunch: false
         // What the marked block in bindings.lua was last written with. The
         // block itself is the real state; this is how the card knows what to
         // show without parsing Lua.
@@ -187,6 +191,8 @@ Item {
         id: director
         audioEnabled: preferences.sound && !root.mutedForShow
         volume: preferences.volume
+        launchX: preferences.launchX
+        randomLaunch: preferences.randomLaunch
         onFinished: root.flying = false
     }
 
@@ -214,6 +220,9 @@ Item {
                     time: director.time
                     seed: director.seed
                     shellType: director.shellType
+                    // The director's resolved position, not the preference:
+                    // a random launch picks its spot there, per show.
+                    originX: director.originX
                     bloom: preferences.bloom
                     exposure: preferences.exposure
                 }
@@ -469,6 +478,43 @@ Item {
                                 active: !preferences.sound
                                 onPicked: preferences.sound = false
                             }
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: Style.spacing.md
+                        SettingLabel { text: "Launch" }
+                        Item {
+                            // Fixed width whichever control is showing, so the
+                            // random pill beside it does not jump when toggled.
+                            width: Style.space(240)
+                            height: Style.space(32)
+                            anchors.verticalCenter: parent.verticalCenter
+                            PanelSlider {
+                                anchors.fill: parent
+                                visible: !preferences.randomLaunch
+                                minimum: -1
+                                maximum: 1
+                                step: 0.05
+                                value: preferences.launchX
+                                onMoved: function(v) { preferences.launchX = v }
+                            }
+                            Text {
+                                textFormat: Text.PlainText
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: preferences.randomLaunch
+                                text: "a fresh spot each launch"
+                                color: root.foreground
+                                opacity: 0.6
+                                font.family: root.fontFamily
+                                font.pixelSize: Style.font.body
+                            }
+                        }
+                        SettingPill {
+                            label: "random"
+                            active: preferences.randomLaunch
+                            onPicked: preferences.randomLaunch = !preferences.randomLaunch
                         }
                     }
 

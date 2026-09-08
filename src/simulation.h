@@ -6,6 +6,13 @@
 #include <vector>
 
 namespace fireworks {
+// How far either side of centre a shell may be launched from, in world units.
+// Bounded rather than open-ended: a burst is roughly 85 units across, and the
+// visible world is about +/-355 units wide on a 16:9 view, so this keeps the
+// widest shell inside the frame with room to spare. The simulation does not
+// know the viewport — that is the renderer's business — so this is authored
+// here rather than derived.
+inline constexpr float LaunchSpread = 240.f;
 struct Vec3 {
     float x = 0, y = 0, z = 0;
     Vec3 operator+(Vec3 b) const { return {x + b.x, y + b.y, z + b.z}; }
@@ -61,6 +68,11 @@ class Simulation {
     explicit Simulation(std::uint32_t seed = 73, ShellType type = ShellType::Chrysanthemum);
     void reset(std::uint32_t seed);
     void setShellType(ShellType type);
+    // Where the rocket leaves the ground, along the horizontal axis. Resets the
+    // show, as changing the shell does: the flight is already under way and
+    // there is no meaningful way to move it mid-climb.
+    void setOrigin(float x);
+    float origin() const { return m_originX; }
     ShellType shellType() const { return m_shellType; }
     void advanceTo(double seconds, int maxSteps = 1800);
     void setWind(float wind) { m_wind = wind; }
@@ -87,6 +99,7 @@ class Simulation {
     int m_steps = 0;
     bool m_burst = false;
     float m_wind = 2.2f;
+    float m_originX = 0;
     Vec3 m_rocket, m_velocity, m_burstPosition;
     std::vector<Star> m_stars;
     std::vector<Ember> m_embers;

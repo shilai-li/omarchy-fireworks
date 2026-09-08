@@ -29,6 +29,7 @@ ApplicationWindow {
         time: director.time
         seed: director.seed
         shellType: director.shellType
+        originX: director.originX
         exposure: exposureControl.value
         bloom: bloomControl.value
     }
@@ -93,6 +94,25 @@ ApplicationWindow {
                 Slider { id: exposureControl; from: 0.25; to: 1.8; value: 0.95; Layout.fillWidth: true; Layout.minimumWidth: 30; Accessible.name: "Exposure" }
                 Text { text: "VOL"; color: "#9999a2"; font.pixelSize: 10; font.letterSpacing: 1 }
                 Slider { from: 0; to: 1; value: director.volume; Layout.fillWidth: true; Layout.minimumWidth: 30; onMoved: director.volume=value; Accessible.name: "Volume" }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10
+                Text { text: "LAUNCH"; color: "#9999a2"; font.pixelSize: 10; font.letterSpacing: 1 }
+                Slider {
+                    from: -1; to: 1
+                    value: director.launchX
+                    enabled: !director.randomLaunch
+                    opacity: enabled ? 1 : 0.35
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 30
+                    onMoved: director.launchX=value
+                    Accessible.name: "Launch position"
+                }
+                Button {
+                    text: director.randomLaunch ? "Random" : "Fixed"
+                    onClicked: director.randomLaunch=!director.randomLaunch
+                }
             }
             RowLayout {
                 Layout.fillWidth: true

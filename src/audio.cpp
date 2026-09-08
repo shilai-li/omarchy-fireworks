@@ -7,10 +7,11 @@
 #include <vector>
 
 namespace fireworks {
-QByteArray synthesizeShow(std::uint32_t seed, int sampleRate, ShellType shellType) {
+QByteArray synthesizeShow(std::uint32_t seed, int sampleRate, ShellType shellType, float bias) {
     if (sampleRate < 8000 || sampleRate > 192000 || int(shellType) < 0 ||
         std::size_t(shellType) >= Shells.size())
         return {};
+    bias = std::isfinite(bias) ? std::clamp(bias, -1.f, 1.f) : 0.f;
     const int frames = int(Simulation::Duration * sampleRate);
     std::vector<float> mix(std::size_t(frames) * 2, 0);
     std::uint32_t state = seed ? seed : 1;
@@ -21,6 +22,9 @@ QByteArray synthesizeShow(std::uint32_t seed, int sampleRate, ShellType shellTyp
         return float(state >> 8) / 8388608.f - 1.f;
     };
     auto voice = [&](double start, double duration, float gain, float pan, bool boom) {
+        // Placed, not hard-panned: the launch only leans the image its way, so
+        // a shell at the far edge still fills both channels.
+        pan = std::clamp(pan + bias * 0.7f, -1.f, 1.f);
         const int first = int(start * sampleRate), count = int(duration * sampleRate);
         const float left = std::sqrt((1 - pan) * 0.5f), right = std::sqrt((1 + pan) * 0.5f);
         float low = 0;

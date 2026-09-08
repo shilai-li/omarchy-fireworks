@@ -48,6 +48,11 @@ batched GPU Renderer          QAudioSink
 HDR scene → bloom → tone mapping → transparent overlay
 ```
 
+- The launch position is a simulation input, bounded to a fixed world spread so
+  the widest shell stays inside a 16:9 frame; the simulation never sees the
+  viewport. Random placement is resolved by the show director, which owns the
+  seed, so a given seed replays the same sequence of positions and views bind to
+  the resolved position rather than to the preference.
 - Simulation advances in fixed 1/120-second steps, independently of frame rate.
   Each view simulates on the Qt render thread. Connected monitors share the
   director's clock and seed; they currently show the same composition.
@@ -95,7 +100,7 @@ does not provide Vulkan initialization here. It writes six 1920×1080 frames,
 transparent versions, dark/light background comparisons, a contact sheet,
 `show.wav`, and a JSON verification report. `--shell` takes any slug in the
 catalog — run `--help` for the current list, which the tool generates rather
-than repeating. It checks premultiplied alpha, visible output,
+than repeating. `--launch` takes a position from -1 to 1. It checks premultiplied alpha, visible output,
 at least two hue sectors in each authored shell's hero frame, all six hue sectors
 in the prismatic burst and falling trails, and complete transparency at the end.
 Reported timings include GPU completion and readback, not just rendering.
@@ -130,6 +135,12 @@ omarchy-shell shell rescanPlugins
 omarchy plugin enable shilai_li.fireworks
 omarchy-shell shell summon shilai_li.fireworks
 ```
+
+**Launch** places the shell across the frame, from hard left to hard right, or
+`random` picks a fresh spot for every launch. The stereo image leans the same
+way, so a shell that goes up on the left booms from the left. The rocket drifts
+slightly downwind as it climbs, so a burst lands a little to the right of the
+point it was launched from.
 
 Click the star icon to open the settings card. The icon never launches a show:
 an icon between the tray and the clock is too easy to hit by accident for

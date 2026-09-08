@@ -14,12 +14,21 @@ void Simulation::setShellType(ShellType type) {
     m_shellType = type;
     reset(m_seed);
 }
+void Simulation::setOrigin(float x) {
+    if (!std::isfinite(x))
+        return;
+    x = std::clamp(x, -LaunchSpread, LaunchSpread);
+    if (x == m_originX)
+        return;
+    m_originX = x;
+    reset(m_seed);
+}
 void Simulation::reset(std::uint32_t seed) {
     m_seed = seed;
     m_random = seed ? seed : 1;
     m_steps = 0;
     m_burst = false;
-    m_rocket = {-26, -55, 0};
+    m_rocket = {m_originX, -55, 0};
     m_velocity = {8, 131, 3};
     m_burstPosition = {};
     m_stars.clear();

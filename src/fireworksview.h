@@ -9,6 +9,7 @@ class FireworksView : public QQuickRhiItem {
     Q_PROPERTY(float exposure READ exposure WRITE setExposure NOTIFY exposureChanged)
     Q_PROPERTY(float bloom READ bloom WRITE setBloom NOTIFY bloomChanged)
     Q_PROPERTY(float wind READ wind WRITE setWind NOTIFY windChanged)
+    Q_PROPERTY(float originX READ originX WRITE setOriginX NOTIFY originXChanged)
   public:
     explicit FireworksView(QQuickItem *parent = nullptr);
     double time() const { return m_time; }
@@ -17,12 +18,14 @@ class FireworksView : public QQuickRhiItem {
     float exposure() const { return m_exposure; }
     float bloom() const { return m_bloom; }
     float wind() const { return m_wind; }
+    float originX() const { return m_originX; }
     void setTime(double value);
     void setSeed(int value);
     void setShellType(int value);
     void setExposure(float value);
     void setBloom(float value);
     void setWind(float value);
+    void setOriginX(float value);
   signals:
     void timeChanged();
     void seedChanged();
@@ -30,6 +33,7 @@ class FireworksView : public QQuickRhiItem {
     void exposureChanged();
     void bloomChanged();
     void windChanged();
+    void originXChanged();
 
   protected:
     QQuickRhiItemRenderer *createRenderer() override;
@@ -38,5 +42,5 @@ class FireworksView : public QQuickRhiItem {
     double m_time = 0;
     int m_seed = 73;
     int m_shellType = 0;
-    float m_exposure = 0.95f, m_bloom = 0.85f, m_wind = 2.2f;
+    float m_exposure = 0.95f, m_bloom = 0.85f, m_wind = 2.2f, m_originX = 0;
 };

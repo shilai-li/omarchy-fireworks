@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
     for (const auto &shell : fireworks::Shells)
         slugs.append(QString::fromUtf8(shell.slug));
     parser.addOption({"shell", "One of: " + slugs.join(", "), "name", "chrysanthemum"});
+    parser.addOption({"launch", "Launch position across the frame, -1 to 1", "x", "0"});
     parser.addOption({"sequence", "Capture the full 30 fps sequence"});
     parser.addOption({"diagnostics", "Print internal texture diagnostics"});
     parser.process(app);
@@ -38,6 +39,13 @@ int main(int argc, char **argv) {
         qCritical() << "Invalid shell or capture arguments";
         return 2;
     }
+    bool launchOk = false;
+    const float launchX = parser.value("launch").toFloat(&launchOk);
+    if (!launchOk || !std::isfinite(launchX) || launchX < -1 || launchX > 1) {
+        qCritical() << "Launch position must be a number from -1 to 1";
+        return 2;
+    }
+    const float originX = launchX * fireworks::LaunchSpread;
     const auto shellType = fireworks::ShellType(selected);
     const auto &shell = fireworks::shellDefinition(shellType);
     const bool diagnostics = parser.isSet("diagnostics");
@@ -75,6 +83,7 @@ int main(int argc, char **argv) {
     if (!renderer.initialize(rhi.get(), target.get()))
         return 1;
     fireworks::Simulation simulation(73, shellType);
+    simulation.setOrigin(originX);
     QJsonArray results;
     std::array<double, 6> times{1.15, 2.03, shell.heroTime, shell.fallTime, shell.decayTime, 11.0};
     QImage contact(1280, 1170, QImage::Format_RGB32);
@@ -211,6 +220,7 @@ int main(int argc, char **argv) {
         if (!QDir().mkpath(sequenceFolder))
             return 1;
         fireworks::Simulation movie(73, shellType);
+        movie.setOrigin(originX);
         for (int index = 0; index <= 330; ++index) {
             movie.advanceTo(index / 30.0);
             QRhiCommandBuffer *cb = nullptr;
@@ -243,7 +253,7 @@ int main(int argc, char **argv) {
     QFile audio(folder + "/show.wav");
     if (!audio.open(QIODevice::WriteOnly))
         return 1;
-    audio.write(fireworks::waveFile(fireworks::synthesizeShow(73, 48000, shellType)));
+    audio.write(fireworks::waveFile(fireworks::synthesizeShow(73, 48000, shellType, launchX)));
     audio.close();
     QFile report(folder + "/verification.json");
     if (!report.open(QIODevice::WriteOnly))

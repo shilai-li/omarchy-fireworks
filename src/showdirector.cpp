@@ -1,6 +1,7 @@
 #include "showdirector.h"
 #include "audio.h"
 #include "simulation.h"
+#include "simulation.h"
 #include <QMediaDevices>
 #include <QtConcurrentRun>
 #include <algorithm>
@@ -21,7 +22,9 @@ ShowDirector::ShowDirector(QObject *parent) : QObject(parent) {
         m_pcm = m_preparation.result();
         m_readySeed = m_preparingSeed;
         m_readyShell = m_preparingShell;
-        if (m_readySeed != m_seed || m_readyShell != m_shellType) {
+        m_readyBias = m_preparingBias;
+        if (m_readySeed != m_seed || m_readyShell != m_shellType ||
+            m_readyBias != m_originX / fireworks::LaunchSpread) {
             prepareAudio();
             return;
         }
@@ -91,8 +94,48 @@ void ShowDirector::setVolume(float value) {
         m_sink->setVolume(value);
     emit volumeChanged();
 }
+void ShowDirector::setLaunchX(float value) {
+    if (!std::isfinite(value))
+        return;
+    value = std::clamp(value, -1.f, 1.f);
+    if (m_launchX == value)
+        return;
+    m_launchX = value;
+    resolveOrigin();
+}
+void ShowDirector::setRandomLaunch(bool value) {
+    if (m_randomLaunch == value)
+        return;
+    m_randomLaunch = value;
+    // Turning random off should put the shell back where the slider says it is,
+    // without waiting for the next launch to make that visible.
+    resolveOrigin();
+}
+void ShowDirector::resolveOrigin() {
+    float next = m_launchX;
+    if (m_randomLaunch) {
+        // Mixed from the seed and the launch counter, so the position moves
+        // every launch while a given seed still replays the same sequence.
+        std::uint32_t state = std::uint32_t(m_seed) * 2654435761u + m_launchCount * 1013904223u + 1u;
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        next = float(state >> 8) / 8388608.f - 1.f;
+    }
+    const float origin = std::clamp(next, -1.f, 1.f) * fireworks::LaunchSpread;
+    if (m_originX == origin)
+        return;
+    m_originX = origin;
+    emit originXChanged();
+    if (m_running && m_audioEnabled) {
+        stopAudio();
+        prepareAudio();
+    }
+}
 void ShowDirector::launch() {
     pause();
+    ++m_launchCount;
+    resolveOrigin();
     m_time = 0;
     emit timeChanged();
     resume();
@@ -128,7 +171,8 @@ void ShowDirector::seek(double time) {
     emit timeChanged();
 }
 void ShowDirector::prepareAudio() {
-    if (m_readySeed == m_seed && m_readyShell == m_shellType) {
+    const float bias = m_originX / fireworks::LaunchSpread;
+    if (m_readySeed == m_seed && m_readyShell == m_shellType && m_readyBias == bias) {
         startAudio();
         return;
     }
@@ -136,10 +180,11 @@ void ShowDirector::prepareAudio() {
         return;
     m_preparingSeed = m_seed;
     m_preparingShell = m_shellType;
+    m_preparingBias = bias;
     const auto seed = std::uint32_t(m_seed);
     const auto shell = fireworks::ShellType(m_shellType);
     m_preparation.setFuture(
-        QtConcurrent::run([seed, shell] { return fireworks::synthesizeShow(seed, 48000, shell); }));
+        QtConcurrent::run([seed, shell, bias] { return fireworks::synthesizeShow(seed, 48000, shell, bias); }));
 }
 void ShowDirector::startAudio() {
     stopAudio();

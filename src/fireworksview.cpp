@@ -21,6 +21,9 @@ class ViewRenderer : public QQuickRhiItemRenderer {
             wind = view->wind();
             simulation.setWind(wind);
         }
+        // setOrigin resets the show on its own when the value actually moves,
+        // so it is set unconditionally rather than folded into the test above.
+        simulation.setOrigin(view->originX());
         targetTime = view->time();
         settings = {view->exposure(), view->bloom()};
     }
@@ -78,6 +81,16 @@ void FireworksView::setBloom(float v) {
         return;
     m_bloom = v;
     emit bloomChanged();
+    update();
+}
+void FireworksView::setOriginX(float v) {
+    if (!std::isfinite(v))
+        return;
+    v = std::clamp(v, -fireworks::LaunchSpread, fireworks::LaunchSpread);
+    if (m_originX == v)
+        return;
+    m_originX = v;
+    emit originXChanged();
     update();
 }
 void FireworksView::setWind(float v) {

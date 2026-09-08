@@ -96,6 +96,54 @@ int main() {
     }
     require(audible && stereo, "sound must contain an audible stereo event");
     require(fireworks::waveFile(pcm).startsWith("RIFF"), "export must be a WAV file");
+
+    // --- launch position -------------------------------------------------
+    // The burst has to land where the launch was moved to, and not merely
+    // somewhere different: a rocket that drifts on its own would satisfy an
+    // inequality but not this.
+    fireworks::Simulation centred(73), shifted(73);
+    shifted.setOrigin(120);
+    require(centred.origin() == 0, "a shell must launch from the centre by default");
+    require(shifted.origin() == 120, "the launch position must be taken as given");
+    centred.advanceTo(fireworks::Simulation::BurstTime + fireworks::Simulation::Step);
+    shifted.advanceTo(fireworks::Simulation::BurstTime + fireworks::Simulation::Step);
+    require(std::abs((shifted.burstPosition().x - centred.burstPosition().x) - 120) < 0.01f,
+            "moving the launch must move the burst by the same distance");
+    require(std::abs(shifted.burstPosition().y - centred.burstPosition().y) < 0.01f &&
+                std::abs(shifted.burstPosition().z - centred.burstPosition().z) < 0.01f,
+            "moving the launch sideways must not change its height or depth");
+    require(shifted.stars().size() == centred.stars().size(),
+            "the launch position must not change the shell itself");
+
+    fireworks::Simulation clamped(73);
+    clamped.setOrigin(4000);
+    require(clamped.origin() == fireworks::LaunchSpread, "an off-screen launch must be clamped, not taken");
+    clamped.setOrigin(std::numeric_limits<float>::quiet_NaN());
+    require(clamped.origin() == fireworks::LaunchSpread, "a non-finite launch position must be refused");
+
+    fireworks::Simulation moved(73);
+    moved.advanceTo(5);
+    moved.setOrigin(-90);
+    require(moved.time() == 0 && moved.stars().empty(),
+            "moving the launch must restart the show, not teleport a burst mid-flight");
+
+    // The stereo image leans towards the launch, so the same show at two
+    // positions is two different tracks — which is why the audio cache is keyed
+    // on the position as well as the seed and the shell.
+    const auto left = fireworks::synthesizeShow(73, 48000, fireworks::ShellType::Chrysanthemum, -1.f);
+    const auto right = fireworks::synthesizeShow(73, 48000, fireworks::ShellType::Chrysanthemum, 1.f);
+    require(left.size() == pcm.size() && right.size() == pcm.size(),
+            "a placed show must still be a full-length track");
+    require(left != right && left != pcm, "the stereo image must follow the launch position");
+    require(left == fireworks::synthesizeShow(73, 48000, fireworks::ShellType::Chrysanthemum, -1.f),
+            "a placed show must stay reproducible");
+    long long leftEnergy = 0, rightEnergy = 0;
+    for (int frame = 0; frame < 11 * 48000; ++frame) {
+        const auto *at = reinterpret_cast<const uchar *>(left.constData()) + frame * 4;
+        leftEnergy += std::abs(int(qFromLittleEndian<qint16>(at)));
+        rightEnergy += std::abs(int(qFromLittleEndian<qint16>(at + 2)));
+    }
+    require(leftEnergy > rightEnergy, "a shell launched to the left must be louder on the left");
     std::cout << "PASS: deterministic flight, 3D burst, multicolor stars and embers, trails, wind, bounded "
                  "catch-up, cleanup, delayed "
                  "stereo audio\n";

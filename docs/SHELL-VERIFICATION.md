@@ -151,3 +151,49 @@ shell as an index, so the original four keep the positions they shipped with.
 - Frame-rate targets remain unmeasured, and the crossette is the heaviest shell
   for star count after the break (288 stars, ~6000 embers at 5.6 s). Nothing was
   timed on the live desktop.
+
+## Milestone 3.1 — adjustable launch position
+
+Verified 2026-09-08. Vulkan captures for the sweep; the installed Omarchy shell
+on OpenGL for the live runs.
+
+Every shell used to leave the ground at world x = -26 with a fixed seed, so the
+show was identical each time, from the same place. The position is now an input:
+`Simulation::setOrigin` in world units, bounded to `LaunchSpread` (240) either
+side of centre, chosen in the card as a fraction of that spread.
+
+The default moved from -26 to 0 — true centre — so all seven capture sets were
+retaken. All seven still report zero invalid premultiplied pixels and zero
+non-transparent pixels in the final frame.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Position reaches the burst | pass | `--launch` sweep at -1, -0.5, 0, 0.5, 1: five evenly spaced bursts, each fully inside the frame (`artifacts/launch/sweep.png`) |
+| Moves the burst by exactly the offset | pass | engine test compares burst x against a centred run within 0.01 |
+| Sideways only | pass | burst y and z unchanged within 0.01 |
+| Bounded | pass | `setOrigin(4000)` clamps to 240; NaN is refused |
+| Restarts rather than teleports | pass | `setOrigin` mid-flight resets time and clears stars |
+| Stereo follows the launch | pass | a left-placed show carries more energy in the left channel across the whole track |
+| Live slider | pass | `uinput` pointer drag: `launchX=-0.94` then `0.97`, and the show appeared on the matching side of the desktop |
+| Live random | pass | three consecutive launches landed in three different places |
+| Random is reproducible | pass | resolved from seed and launch counter, not a clock |
+
+Mutations, each confirmed to fail a named test:
+
+| Mutation | Caught by |
+|---|---|
+| `setOrigin` ignores its argument | `the launch position must be taken as given` |
+| audio bias dropped from the pan | `the stereo image must follow the launch position` |
+| `setOrigin` skips the reset | `moving the launch must move the burst by the same distance` |
+
+### Limits
+
+- One rocket per show, so this places a single burst rather than composing a
+  display across the sky. Multiple simultaneous shells remain a later milestone.
+- `LaunchSpread` is authored against 16:9. On a much wider view the usable world
+  is wider than 240 units and the extremes will not reach the edges; on a much
+  narrower one the widest shell could sit close to them. The simulation is kept
+  independent of the viewport, so this is a fixed constant rather than a fit.
+- Connected monitors still show the same composition, including the same launch
+  position.
+- The vertical position and the burst height are not adjustable.

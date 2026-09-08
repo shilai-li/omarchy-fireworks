@@ -115,6 +115,18 @@ See [docs/INSTALL-VERIFICATION.md](docs/INSTALL-VERIFICATION.md).
 
 Verified 2026-09-08. See [docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md).
 
+### Milestone 3.1 — Adjustable launch position
+
+- [x] Launch position is a bounded simulation input, defaulting to centre.
+- [x] Random placement resolved from the seed and a launch counter.
+- [x] Stereo image leans towards the launch; audio cache keyed on it.
+- [x] Slider and `random` in the settings card, a control in the preview, and
+      `--launch` in the capture tool.
+- [x] Tests that fail when the position is ignored, unclamped, or unheard.
+
+Verified 2026-09-08. The default launch moved from x=-26 to true centre, so
+every capture set was retaken. See [docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md).
+
 ### Subsequent work
 
 1. Show choreography, coordinated monitor views, and richer sound design.
