@@ -37,6 +37,12 @@ QStringList ShowDirector::shellNames() const {
         result.append(QString::fromUtf8(shell.name));
     return result;
 }
+QStringList ShowDirector::shellDescriptions() const {
+    QStringList result;
+    for (const auto &shell : fireworks::Shells)
+        result.append(QString::fromUtf8(shell.description));
+    return result;
+}
 QString ShowDirector::shellName() const { return QString::fromUtf8(fireworks::Shells[m_shellType].name); }
 QString ShowDirector::shellDescription() const {
     return QString::fromUtf8(fireworks::Shells[m_shellType].description);

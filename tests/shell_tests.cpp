@@ -45,6 +45,63 @@ int main() {
         if (type != ShellType::Prismatic)
             require(primary > 0 && secondary > 0 && primary + secondary == style.stars,
                     "authored shells must begin with a coordinated two-color palette");
+        auto speedOf = [](const Star &s) {
+            return std::sqrt(s.velocity.x * s.velocity.x + s.velocity.y * s.velocity.y +
+                             s.velocity.z * s.velocity.z);
+        };
+        if (type == ShellType::Ring) {
+            // A ring is planar and hollow, and both halves have to be asserted:
+            // a sphere would satisfy either one alone. Every velocity lies in
+            // the tilted plane, so its component along that plane's normal
+            // stays near zero, while no star sits near the centre.
+            constexpr float ny = -RingTiltSin, nz = RingTiltCos;
+            float worstOut = 0, slowest = 1e9f;
+            for (const auto &s : direct.stars()) {
+                worstOut = std::max(worstOut, std::abs(s.velocity.y * ny + s.velocity.z * nz));
+                slowest = std::min(slowest, speedOf(s));
+            }
+            require(worstOut < 3.f, "ring stars must lie in a single plane");
+            require(slowest > 60.f, "the ring must be hollow — no star may sit near its centre");
+        }
+        if (type == ShellType::Peony) {
+            // Three nested layers, each slower and longer-lived than the one
+            // outside it. Means rather than extremes: the shared one-in-13 slow
+            // star overlaps the layers at the edges without blurring the bands.
+            double speed[3]{}, life[3]{};
+            int members[3]{};
+            for (std::size_t i = 0; i < direct.stars().size(); ++i) {
+                const auto &s = direct.stars()[i];
+                speed[i % 3] += speedOf(s);
+                life[i % 3] += s.lifetime;
+                ++members[i % 3];
+            }
+            for (int layer = 0; layer < 3; ++layer) {
+                require(members[layer] > 0, "every peony layer must be populated");
+                speed[layer] /= members[layer];
+                life[layer] /= members[layer];
+            }
+            require(speed[0] > speed[1] * 1.25 && speed[1] > speed[2] * 1.35,
+                    "peony layers must be distinctly nested, not one blurred sphere");
+            require(life[2] > life[1] && life[1] > life[0],
+                    "inner peony layers must outlive the ones outside them");
+        }
+        if (style.splitInto > 0) {
+            Simulation cross(73, type);
+            cross.advanceTo(Simulation::BurstTime + Simulation::Step);
+            const std::size_t launched = cross.stars().size();
+            cross.advanceTo(Simulation::BurstTime + style.lifeMax * style.splitAt + 0.4);
+            require(cross.stars().size() > launched * 2, "crossette stars must break into children");
+            // 72 parents that each break once into four give 288 stars and no
+            // more; children that broke again would run away past this.
+            const std::size_t ceiling = launched * std::size_t(style.splitInto);
+            for (int tick = 0; tick <= 1320; ++tick) {
+                cross.advanceTo(tick * Simulation::Step);
+                require(cross.stars().size() <= ceiling, "each crossette star must break once, not repeatedly");
+                for (const auto &s : cross.stars())
+                    require(s.color == style.primary || s.color == style.secondary,
+                            "crossette children must inherit the shell's palette");
+            }
+        }
         direct.advanceTo(style.fallTime);
         const int ticks = int(std::floor(style.fallTime / Simulation::Step + 1e-7));
         for (int tick = 1; tick <= ticks; ++tick)

@@ -15,6 +15,10 @@ class ShowDirector : public QObject {
     Q_PROPERTY(int seed READ seed WRITE setSeed NOTIFY seedChanged)
     Q_PROPERTY(int shellType READ shellType WRITE setShellType NOTIFY shellTypeChanged)
     Q_PROPERTY(QStringList shellNames READ shellNames CONSTANT)
+    // Parallel to shellNames. The settings card describes the shell the
+    // user has selected, which is not always the one the director last
+    // played — a named-shell payload plays one without changing it.
+    Q_PROPERTY(QStringList shellDescriptions READ shellDescriptions CONSTANT)
     Q_PROPERTY(QString shellName READ shellName NOTIFY shellTypeChanged)
     Q_PROPERTY(QString shellDescription READ shellDescription NOTIFY shellTypeChanged)
     Q_PROPERTY(double previewTime READ previewTime NOTIFY shellTypeChanged)
@@ -29,6 +33,7 @@ class ShowDirector : public QObject {
     int seed() const { return m_seed; }
     int shellType() const { return m_shellType; }
     QStringList shellNames() const;
+    QStringList shellDescriptions() const;
     QString shellName() const;
     QString shellDescription() const;
     double previewTime() const;

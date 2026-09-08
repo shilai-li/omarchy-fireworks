@@ -9,6 +9,9 @@ colored bloom, historical trails, illuminated smoke, and delayed stereo sound.
 | Emerald palm | Twelve emerald/cyan fronds with long arching trails and golden crackle. |
 | Violet willow | Long violet/cyan branches bend under gravity and dissolve into gold. |
 | Prismatic willow | The original eight-color willow, retained as an option. |
+| Sapphire ring | A tilted, hollow ring banded in sapphire and rose. |
+| Rose peony | Three nested rose/sapphire layers that fade from the outside in. |
+| Lime crossette | Few heavy stars, each breaking into a four-armed cross. |
 
 The product direction and milestone checklist live in [AGENTS.md](AGENTS.md).
 
@@ -52,7 +55,13 @@ HDR scene → bloom → tone mapping → transparent overlay
   historical trails use batched triangles; no individual particles are QML
   objects. Internal RGBA16F light buffers feed a two-scale bloom pipeline.
 - Shell profiles author the geometry, drag, trail length, palette, and burn
-  progression. The three new shells transition from coordinated colors to gold;
+  progression. The ring is thrown in one tilted plane and given deliberately
+  short trails, because a willow's trail length reaches back to the burst and
+  fills the ring in as a disc. The peony nests three layers that slow, outlive,
+  and burn later the further in they sit. A crossette star is replaced mid-flight
+  by four children thrown across its line of flight, which is the one shell whose
+  star count grows after the burst; children inherit the parent's colour and its
+  burn progress rather than starting cold. The three new shells transition from coordinated colors to gold;
   historical trails retain their emission colors and shed embers inherit their
   birth color. Prismatic stars keep their original eight-color identities.
   Pale-hot cores and intensity-based tone mapping preserve colored bloom.
@@ -84,8 +93,9 @@ The windowless capture tool uses the desktop's platform Vulkan integration. Run
 it from a working graphical session with GPU access; Qt's `offscreen` platform
 does not provide Vulkan initialization here. It writes six 1920×1080 frames,
 transparent versions, dark/light background comparisons, a contact sheet,
-`show.wav`, and a JSON verification report. `--shell` accepts `chrysanthemum`,
-`palm`, `willow`, or `prismatic`. It checks premultiplied alpha, visible output,
+`show.wav`, and a JSON verification report. `--shell` takes any slug in the
+catalog — run `--help` for the current list, which the tool generates rather
+than repeating. It checks premultiplied alpha, visible output,
 at least two hue sectors in each authored shell's hero frame, all six hue sectors
 in the prismatic burst and falling trails, and complete transparency at the end.
 Reported timings include GPU completion and readback, not just rendering.

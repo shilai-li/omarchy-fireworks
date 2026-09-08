@@ -94,3 +94,60 @@ Following the Omarchy integration conventions, the bundle remains separate in
 `build/plugin/`; it is **not installed or enabled**. Test preferences stay in
 `build/verification-config/`. Omafetti, user shell configuration, hotkeys, and
 packaged Omarchy files were not modified.
+
+## Milestone 3 — rings, layered bursts, and breaking stars
+
+Verified 2026-09-08, seed 73, same machine and Qt/Mesa versions as above.
+Vulkan captures for the offline frames; the installed Omarchy shell on OpenGL
+for the live runs.
+
+| Shell | Simulation | Color design |
+|---|---|---|
+| Sapphire ring | 300 stars on the circumference of one tilted plane, nothing inside it; short trails | Six alternating sapphire and rose arcs |
+| Rose peony | 390 stars in three concentric layers at 1.00/0.71/0.45 of full reach, each longer-lived and later-burning inward | Rose outside, sapphire middle, rose core |
+| Lime crossette | 72 heavy stars, each replaced at 34% of its life by four children thrown across its line of flight — 288 stars after the break | Lime with cyan quarters; children inherit the parent's colour and burn progress |
+
+`ShellType` is appended to and never reordered: the plugin persists the chosen
+shell as an index, so the original four keep the positions they shipped with.
+`tests/import.qml.in` asserts this rather than trusting it.
+
+### Checks
+
+- CTest passes 3/3. The suite walks the catalog, so the new shells inherit the
+  existing determinism, frame-pacing, trail-colour, bounded-decay, cleanup, and
+  distinct-audio checks.
+- New shape assertions, each confirmed to fail when the shape is broken:
+
+  | Mutation | Caught by |
+  |---|---|
+  | ring branch disabled (sphere instead) | `ring stars must lie in a single plane` |
+  | `breakCrossettes` made a no-op | `crossette stars must break into children` |
+  | peony layer scale flattened to 1.0 | `peony layers must be distinctly nested, not one blurred sphere` |
+
+- The crossette also asserts an upper bound of `parents × 4` stars across the
+  whole decay, so a child that broke again would be caught, and that every star
+  still carries the shell's two colours.
+- The ring's tilt constants live in `shell.h` and are used by both the
+  simulation and the test, so the planarity check cannot drift from the plane.
+- Vulkan capture sets under `artifacts/shells/{ring,peony,crossette}`: six
+  frames, transparent versions, contact sheet, `show.wav`, and a report each.
+  All three reach full transparency by 11.00 s with zero stars and embers.
+- Each shell was launched on the installed shell and photographed compositing
+  over the desktop; no QML errors, and no layer surface left behind afterwards.
+- Selecting a shell from the settings card was driven with a `uinput` pointer:
+  the pill highlighted, `shellType=4` persisted to the INI, the description
+  followed the selection, and the hotkey then launched that shell.
+
+### Limits
+
+- The peony's inner rose layer sits behind its sapphire middle layer, so what
+  reads at a glance is a rose shell with a blue heart rather than three
+  countable bands. The nesting is real and asserted; the third band is not
+  separately legible in a still.
+- Crackle windows are measured from a star's own age. For the crossette that
+  clock restarts when a child is born, so its window is authored against the
+  break rather than the burst; the audio schedule still runs from the burst,
+  which puts its crackle slightly ahead of the visible break.
+- Frame-rate targets remain unmeasured, and the crossette is the heaviest shell
+  for star count after the break (288 stars, ~6000 embers at 5.6 s). Nothing was
+  timed on the live desktop.

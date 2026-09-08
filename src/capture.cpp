@@ -26,7 +26,10 @@ int main(int argc, char **argv) {
     QCommandLineParser parser;
     parser.addHelpOption();
     parser.addPositionalArgument("folder", "Capture output directory", "[folder]");
-    parser.addOption({"shell", "chrysanthemum, palm, willow, or prismatic", "name", "chrysanthemum"});
+    QStringList slugs;
+    for (const auto &shell : fireworks::Shells)
+        slugs.append(QString::fromUtf8(shell.slug));
+    parser.addOption({"shell", "One of: " + slugs.join(", "), "name", "chrysanthemum"});
     parser.addOption({"sequence", "Capture the full 30 fps sequence"});
     parser.addOption({"diagnostics", "Print internal texture diagnostics"});
     parser.process(app);

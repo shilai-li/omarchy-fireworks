@@ -104,11 +104,21 @@ Verified 2026-09-08 against the installed shell, driving the bar icon with a
 `uinput` pointer and the hotkey with a `uinput` keyboard.
 See [docs/INSTALL-VERIFICATION.md](docs/INSTALL-VERIFICATION.md).
 
+### Milestone 3 — Rings, layered bursts, and breaking stars
+
+- [x] Sapphire ring: a hollow, tilted, planar ring with alternating arcs.
+- [x] Rose peony: three nested layers, each slower and longer-lived inward.
+- [x] Lime crossette: stars break once into four children mid-flight.
+- [x] Shape tests that fail when the shape is broken, checked by mutation.
+- [x] Shell indices stay stable so saved preferences keep meaning.
+- [x] Per-shell Vulkan captures and a live run of each on the installed shell.
+
+Verified 2026-09-08. See [docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md).
+
 ### Subsequent work
 
-1. Additional authored shells: rings and layered bursts.
-2. Show choreography, coordinated monitor views, and richer sound design.
-3. Performance tuning against measured GPU/CPU frame times on real displays.
+1. Show choreography, coordinated monitor views, and richer sound design.
+2. Performance tuning against measured GPU/CPU frame times on real displays.
 
 ## Working conventions
 

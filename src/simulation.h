@@ -29,6 +29,9 @@ struct Star {
     SparkColor color = SparkColor::Amber;
     SparkColor finalColor = SparkColor::Amber;
     float transitionStart = 2, transitionEnd = 3;
+    // Set once a crossette star has broken, so it breaks once and its children
+    // never break again. Every other shell leaves it false for life.
+    bool broken = false;
     float colorMix() const {
         const float x =
             std::clamp((age / lifetime - transitionStart) / (transitionEnd - transitionStart), 0.f, 1.f);
@@ -75,6 +78,7 @@ class Simulation {
   private:
     void step();
     void explode();
+    void breakCrossettes();
     float random(float low, float high);
     void ember(Vec3 position, Vec3 velocity, float energy, float life, SparkColor color = SparkColor::Amber,
                SparkColor finalColor = SparkColor::Amber, float colorMix = 0);

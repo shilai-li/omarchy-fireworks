@@ -5,9 +5,16 @@ QtObject {
     property var view: Native.FireworksView { time: 3.7 }
     property var director: Native.ShowDirector { audioEnabled: false }
     Component.onCompleted: {
-        if (director.shellNames.length !== 4 || director.shellIndex("palm") !== 1 || director.shellIndex("unknown") !== -1)
+        var count = director.shellNames.length
+        if (count < 4 || director.shellIndex("unknown") !== -1)
             throw new Error("Shell metadata failed")
-        for (var shell = 0; shell < 4; ++shell) {
+        // The plugin persists the chosen shell as an index, so these four keep
+        // the positions they shipped with; new shells are appended after them.
+        var original = ["chrysanthemum", "palm", "willow", "prismatic"]
+        for (var o = 0; o < original.length; ++o)
+            if (director.shellIndex(original[o]) !== o)
+                throw new Error("Shell indices must stay stable: " + original[o])
+        for (var shell = 0; shell < count; ++shell) {
             director.shellType = shell
             view.shellType = shell
             if (director.shellType !== shell || view.shellType !== shell || !director.shellName)
@@ -16,7 +23,7 @@ QtObject {
         }
         director.shellType = 99
         view.shellType = -1
-        if (director.shellType !== 3 || view.shellType !== 0) throw new Error("Shell bounds failed")
+        if (director.shellType !== count - 1 || view.shellType !== 0) throw new Error("Shell bounds failed")
         director.volume = -1
         if (director.volume !== 0) throw new Error("Volume lower bound failed")
         director.volume = 2

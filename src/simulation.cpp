@@ -1,6 +1,7 @@
 #include "simulation.h"
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 
 namespace fireworks {
 Simulation::Simulation(std::uint32_t seed, ShellType type)
@@ -76,6 +77,34 @@ void Simulation::explode() {
                 star.transitionStart = 0.72f;
                 star.transitionEnd = 0.95f;
             }
+        } else if (m_shellType == ShellType::Ring) {
+            // A flat annulus tilted away from the camera, so it reads as a ring
+            // with depth rather than as a circle or an edge-on line. Stars are
+            // placed around the circumference and nowhere inside it.
+            const float a = float(i) / count * 6.283185f + random(-0.011f, 0.011f);
+            const float reach = random(shell.speedMin, shell.speedMax) * random(0.94f, 1.06f);
+            star.velocity = {std::cos(a) * reach, std::sin(a) * reach * RingTiltCos + random(-2.f, 2.f),
+                             std::sin(a) * reach * RingTiltSin};
+            // Six alternating arcs: the banding is what makes it read as a ring
+            // rather than a smudge once the trails overlap.
+            star.color = (int(a * 0.9549297f) % 2) ? shell.secondary : shell.primary;
+            star.energy *= 1.3f;
+        } else if (m_shellType == ShellType::Peony) {
+            // Three concentric layers, each slower, longer-lived and later to
+            // burn than the one outside it, so the shell fades inwards.
+            const int layer = i % 3;
+            const float scale = layer == 0 ? 1.f : layer == 1 ? 0.71f : 0.45f;
+            star.velocity = star.velocity * scale;
+            star.lifetime *= 1.f + layer * 0.16f;
+            star.color = layer == 1 ? shell.secondary : shell.primary;
+            star.transitionStart = shell.transitionStart + layer * 0.07f;
+            star.transitionEnd = std::min(0.985f, shell.transitionEnd + layer * 0.05f);
+            star.energy *= layer == 0 ? 1.f : 1.25f;
+        } else if (m_shellType == ShellType::Crossette) {
+            // Few, heavy stars: each one is a small shell in its own right once
+            // it breaks, so it has to be bright enough to follow until it does.
+            star.color = i % 4 == 0 ? shell.secondary : shell.primary;
+            star.energy *= 1.55f;
         } else if (m_shellType == ShellType::Palm) {
             // Twelve narrow 3D bundles, not a sparse spherical explosion.
             const int frond = i / 8;
@@ -102,6 +131,60 @@ void Simulation::explode() {
     for (int i = 0; i < 180; ++i)
         ember(m_rocket, {random(-38, 38), random(-30, 45), random(-30, 30)}, random(1, 3),
               random(0.18f, 0.85f), prismatic ? prismaticColor(std::size_t(i), m_seed) : shell.primary);
+}
+void Simulation::breakCrossettes() {
+    const auto &shell = shellDefinition(m_shellType);
+    if (shell.splitInto <= 0 || m_stars.empty())
+        return;
+    // Children cannot be appended while m_stars is being walked — a
+    // reallocation would leave the loop holding dangling references — so they
+    // are staged here and moved in once the walk is done.
+    std::vector<Star> children;
+    const float t = float(time());
+    for (auto &s : m_stars) {
+        if (s.broken || s.age < s.lifetime * shell.splitAt)
+            continue;
+        s.broken = true;
+        // A cross is thrown across the line of flight, so build a basis around
+        // it: any vector not parallel to the flight, then two cross products.
+        const Vec3 v = s.velocity;
+        const float len = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+        const Vec3 f = len > 1e-3f ? v * (1 / len) : Vec3{0, 1, 0};
+        const Vec3 helper = std::abs(f.y) < 0.9f ? Vec3{0, 1, 0} : Vec3{1, 0, 0};
+        Vec3 a{helper.y * f.z - helper.z * f.y, helper.z * f.x - helper.x * f.z,
+               helper.x * f.y - helper.y * f.x};
+        const float alen = std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+        a = alen > 1e-3f ? a * (1 / alen) : Vec3{1, 0, 0};
+        const Vec3 b{f.y * a.z - f.z * a.y, f.z * a.x - f.x * a.z, f.x * a.y - f.y * a.x};
+        for (int k = 0; k < shell.splitInto; ++k) {
+            const float angle = float(k) * 6.283185f / shell.splitInto + random(-0.06f, 0.06f);
+            const Vec3 dir = a * std::cos(angle) + b * std::sin(angle);
+            Star child;
+            child.position = s.position;
+            child.velocity = s.velocity * 0.44f + dir * (shell.splitSpeed * random(0.85f, 1.15f));
+            child.lifetime = (s.lifetime - s.age) * random(0.72f, 1.0f);
+            child.energy = s.energy * random(0.5f, 0.75f);
+            child.phase = random(0, 6.283185f);
+            child.color = s.color;
+            child.finalColor = SparkColor::Amber;
+            // The parent is already part-burned; its children carry on from
+            // where it had got to rather than starting cold and going green
+            // again halfway to gold.
+            child.transitionStart = 0;
+            child.transitionEnd = std::max(0.05f, 1.f - s.colorMix());
+            child.broken = true;
+            child.trail[0] = {child.position, t, s.colorMix()};
+            child.trailCount = 1;
+            children.push_back(child);
+        }
+        // The parent is spent: the sweep at the end of the step retires it.
+        s.age = s.lifetime;
+        for (int k = 0; k < 9; ++k)
+            ember(s.position, {random(-14, 14), random(-12, 12), random(-14, 14)}, s.energy * 1.4f,
+                  random(0.1f, 0.3f), s.color, SparkColor::Amber, s.colorMix());
+    }
+    m_stars.insert(m_stars.end(), std::make_move_iterator(children.begin()),
+                   std::make_move_iterator(children.end()));
 }
 void Simulation::advanceTo(double seconds, int maxSteps) {
     if (!std::isfinite(seconds))
@@ -175,6 +258,7 @@ void Simulation::step() {
                                random(0, 100),
                                s.color});
     }
+    breakCrossettes();
     std::erase_if(m_stars, [](const Star &s) { return s.age >= s.lifetime; });
     for (auto &e : m_embers) {
         e.age += dt;

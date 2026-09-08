@@ -370,13 +370,23 @@ Item {
                         width: parent.width
                         opacity: 0.75
                         font.pixelSize: Style.font.body
-                        text: director.shellDescription
+                        // The selected shell, not the one the director last
+                        // played: a named-shell payload plays a shell for one
+                        // launch without changing the saved preference.
+                        text: director.shellDescriptions[preferences.shellType] || ""
                     }
 
                     Row {
                         width: parent.width
                         spacing: Style.spacing.md
-                        SettingLabel { text: "Shell" }
+                        SettingLabel {
+                            text: "Shell"
+                            // The pills wrap to three rows; centred against all
+                            // of them the label floats beside the middle one.
+                            anchors.verticalCenter: undefined
+                            anchors.top: parent.top
+                            anchors.topMargin: Style.space(8)
+                        }
                         Flow {
                             // Four names of this length do not fit one line on a
                             // narrow panel, and a Row would draw the last one off
