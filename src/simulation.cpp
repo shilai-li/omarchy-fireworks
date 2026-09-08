@@ -98,6 +98,40 @@ void Simulation::explode() {
             // rather than a smudge once the trails overlap.
             star.color = (int(a * 0.9549297f) % 2) ? shell.secondary : shell.primary;
             star.energy *= 1.3f;
+        } else if (m_shellType == ShellType::Heart) {
+            // A camera-facing outline; paired bands keep the lobes and notch
+            // legible without filling the heart with radial trails.
+            const float a = float(i / 2) / (count / 2) * 6.283185f;
+            const float band = i % 2 ? 0.90f : 1.f;
+            const float sn = std::sin(a);
+            star.velocity = {80.f * sn * sn * sn * band,
+                             (13 * std::cos(a) - 5 * std::cos(2 * a) -
+                              2 * std::cos(3 * a) - std::cos(4 * a)) * 5.f * band,
+                             0};
+            star.color = i % 2 ? shell.secondary : shell.primary;
+            star.energy *= 1.3f;
+        } else if (m_shellType == ShellType::Saturn) {
+            const bool orbit = i % 2 == 0;
+            if (orbit) {
+                const float a = float(i / 2) / (count / 2) * 6.283185f;
+                const float reach = random(shell.speedMin, shell.speedMax);
+                star.velocity = {std::cos(a) * reach, std::sin(a) * reach * RingTiltCos,
+                                 std::sin(a) * reach * RingTiltSin};
+            } else {
+                star.velocity = star.velocity * 0.38f;
+            }
+            star.color = orbit ? shell.secondary : shell.primary;
+            star.energy *= orbit ? 1.3f : 1.f;
+        } else if (m_shellType == ShellType::Spiral) {
+            // Three evenly spaced arms with radius increasing along each
+            // curve. Ballistic expansion preserves the spiral silhouette.
+            const int arm = i % 3;
+            const float u = float(i / 3) / (count / 3 - 1);
+            const float a = arm * 2.0943951f + u * 3.6f;
+            const float reach = shell.speedMin + u * (shell.speedMax - shell.speedMin);
+            star.velocity = {std::cos(a) * reach, std::sin(a) * reach, 0};
+            star.color = arm == 1 ? shell.secondary : shell.primary;
+            star.energy *= 1.3f;
         } else if (m_shellType == ShellType::Peony) {
             // Three concentric layers, each slower, longer-lived and later to
             // burn than the one outside it, so the shell fades inwards.

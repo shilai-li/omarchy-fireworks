@@ -12,6 +12,9 @@ colored bloom, historical trails, illuminated smoke, and delayed stereo sound.
 | Sapphire ring | A tilted, hollow ring banded in sapphire and rose. |
 | Rose peony | Three nested rose/sapphire layers that fade from the outside in. |
 | Lime crossette | Few heavy stars, each breaking into a four-armed cross. |
+| Rose heart | A rose and cyan double outline with a clear notch and pointed tip. |
+| Amber Saturn | A compact amber sphere inside a wide, tilted cyan orbit. |
+| Violet spiral | Three curved violet/cyan arms expand and fade into golden sparks. |
 
 The product direction and milestone checklist live in [AGENTS.md](AGENTS.md).
 

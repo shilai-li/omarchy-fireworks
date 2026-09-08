@@ -85,6 +85,47 @@ int main() {
             require(life[2] > life[1] && life[1] > life[0],
                     "inner peony layers must outlive the ones outside them");
         }
+        if (type == ShellType::Heart) {
+            const auto &stars = direct.stars();
+            require(std::abs(stars[0].velocity.x) < 0.01f &&
+                        stars[0].velocity.y > 20 && stars[0].velocity.y < 30,
+                    "heart must have a central notch above the burst");
+            require(stars[style.stars / 2].velocity.y < -80,
+                    "heart must have a pointed lower tip");
+            float lobeHeight = 0;
+            for (const auto &s : stars) {
+                require(s.velocity.z == 0, "heart must remain camera-facing");
+                if (std::abs(s.velocity.x) > 30)
+                    lobeHeight = std::max(lobeHeight, s.velocity.y);
+            }
+            require(lobeHeight > 50, "heart lobes must rise above the notch");
+        }
+        if (type == ShellType::Saturn) {
+            for (std::size_t i = 0; i < direct.stars().size(); ++i) {
+                const auto &s = direct.stars()[i];
+                if (i % 2 == 0) {
+                    require(speedOf(s) > 70 && s.color == style.secondary,
+                            "Saturn must have a wide cyan orbit");
+                    require(std::abs(-s.velocity.y * RingTiltSin +
+                                     s.velocity.z * RingTiltCos) < 1,
+                            "Saturn orbit must lie in its tilted plane");
+                } else
+                    require(speedOf(s) < 33 && s.color == style.primary,
+                            "Saturn planet must fit inside the orbit");
+            }
+        }
+        if (type == ShellType::Spiral) {
+            for (int i = 0; i < style.stars; ++i) {
+                const auto &s = direct.stars()[i];
+                require(s.velocity.z == 0, "spiral arms must remain camera-facing");
+                if (i >= 3) {
+                    const auto &prev = direct.stars()[i - 3];
+                    require(speedOf(s) > speedOf(prev), "spiral arms must grow outwards");
+                    require(prev.velocity.x * s.velocity.y - prev.velocity.y * s.velocity.x > 0,
+                            "spiral arms must curve consistently instead of forming radial spokes");
+                }
+            }
+        }
         if (style.splitInto > 0) {
             Simulation cross(73, type);
             cross.advanceTo(Simulation::BurstTime + Simulation::Step);
@@ -150,6 +191,9 @@ int main() {
         std::cout << "PASS: " << style.slug << " silhouette, burn history, timing, cleanup, audio\n";
     }
     require(shellIndex("unknown") == -1, "unknown shell must not silently select a preset");
+    require(shellIndex("chrysanthemum") == 0 && shellIndex("prismatic") == 3 &&
+                shellIndex("crossette") == 6 && shellIndex("heart") == 7,
+            "new shells must preserve saved selection indices");
     require(synthesizeShow(73, 48000, ShellType(-1)).isEmpty(), "invalid audio shell must be rejected");
     require(Simulation(73, ShellType(-1)).shellType() == ShellType::Chrysanthemum,
             "invalid native simulation shell must use the safe default");

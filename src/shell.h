@@ -9,7 +9,7 @@ namespace fireworks {
 // copy of these numbers and quietly drift from them.
 inline constexpr float RingTiltCos = 0.40f, RingTiltSin = 0.92f;
 // Appended, never reordered: the plugin stores the selected shell as an index.
-enum class ShellType { Chrysanthemum, Palm, Willow, Prismatic, Ring, Peony, Crossette };
+enum class ShellType { Chrysanthemum, Palm, Willow, Prismatic, Ring, Peony, Crossette, Heart, Saturn, Spiral };
 struct ShellDefinition {
     const char *slug;
     const char *name;
@@ -32,7 +32,7 @@ struct ShellDefinition {
     float splitSpeed = 0;
     double heroTime = 3.7, fallTime = 5.9, decayTime = 8.2;
 };
-inline constexpr std::array<ShellDefinition, 7> Shells{{
+inline constexpr std::array<ShellDefinition, 10> Shells{{
     {.slug = "chrysanthemum",
      .name = "Crimson chrysanthemum",
      .description = "A crimson sphere, a cyan heart, and gold-changing tips.",
@@ -180,6 +180,42 @@ inline constexpr std::array<ShellDefinition, 7> Shells{{
      .heroTime = 4.1,
      .fallTime = 5.6,
      .decayTime = 7.4},
+    {.slug = "heart",
+     .name = "Rose heart",
+     .description = "A rose heart outlined in cyan, with a sparkling golden farewell.",
+     .stars = 320,
+     .speedMin = 75, .speedMax = 80,
+     .lifeMin = 3.8f, .lifeMax = 4.4f,
+     .drag = 0.42f, .trailLife = 0.22f, .trailWidth = 1.4f,
+     .sheddingInterval = 0.10f,
+     .primary = SparkColor::Rose, .secondary = SparkColor::Cyan,
+     .transitionStart = 0.58f, .transitionEnd = 0.90f,
+     .crackleStart = 2.2f, .crackleEnd = 4.1f, .audioCrackles = 70,
+     .heroTime = 3.3, .fallTime = 4.8, .decayTime = 6.3},
+    {.slug = "saturn",
+     .name = "Amber Saturn",
+     .description = "An amber planet wrapped in a wide, tilted cyan orbit.",
+     .stars = 420,
+     .speedMin = 76, .speedMax = 82,
+     .lifeMin = 4.0f, .lifeMax = 4.8f,
+     .drag = 0.42f, .trailLife = 0.28f, .trailWidth = 1.25f,
+     .sheddingInterval = 0.10f,
+     .primary = SparkColor::Amber, .secondary = SparkColor::Cyan,
+     .transitionStart = 0.64f, .transitionEnd = 0.94f,
+     .crackleStart = 2.4f, .crackleEnd = 4.5f, .audioCrackles = 82,
+     .heroTime = 3.4, .fallTime = 5.0, .decayTime = 6.7},
+    {.slug = "spiral",
+     .name = "Violet spiral",
+     .description = "Three violet and cyan spiral arms unfurl into golden sparks.",
+     .stars = 360,
+     .speedMin = 24, .speedMax = 90,
+     .lifeMin = 4.0f, .lifeMax = 4.8f,
+     .drag = 0.42f, .trailLife = 0.25f, .trailWidth = 1.35f,
+     .sheddingInterval = 0.10f,
+     .primary = SparkColor::Violet, .secondary = SparkColor::Cyan,
+     .transitionStart = 0.56f, .transitionEnd = 0.90f,
+     .crackleStart = 2.3f, .crackleEnd = 4.4f, .audioCrackles = 92,
+     .heroTime = 3.4, .fallTime = 4.9, .decayTime = 6.7},
 }};
 constexpr const ShellDefinition &shellDefinition(ShellType type) { return Shells[std::size_t(type)]; }
 constexpr int shellIndex(std::string_view slug) {
