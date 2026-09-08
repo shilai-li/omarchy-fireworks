@@ -16,6 +16,22 @@ void require(bool result, const char *message) {
 bool same(fireworks::Vec3 a, fireworks::Vec3 b) { return a.x == b.x && a.y == b.y && a.z == b.z; }
 int main() {
     using fireworks::Simulation;
+    for (float origin : {-fireworks::LaunchSpread, 0.f, fireworks::LaunchSpread}) {
+        Simulation flight(73);
+        flight.setOrigin(origin);
+        flight.setWind(12);
+        float previousHeight = flight.rocket().y;
+        while (!flight.burst()) {
+            flight.advanceTo(flight.time() + Simulation::Step);
+            require(flight.rocket().x == origin && flight.rocket().z == 0,
+                    "rocket must rise vertically above its launch position through the burst");
+            require(flight.rocket().y > previousHeight, "rocket must keep rising until it bursts");
+            previousHeight = flight.rocket().y;
+        }
+        for (const auto &point : flight.rocketTrail())
+            require(point.position.x == origin && point.position.z == 0,
+                    "the entire rocket trail must follow the vertical launch line");
+    }
     Simulation one(73, fireworks::ShellType::Prismatic), many(73, fireworks::ShellType::Prismatic);
     one.advanceTo(1.9);
     require(!one.burst() && one.stars().empty(), "rocket must precede the explosion");

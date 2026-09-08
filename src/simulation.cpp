@@ -29,7 +29,7 @@ void Simulation::reset(std::uint32_t seed) {
     m_steps = 0;
     m_burst = false;
     m_rocket = {m_originX, -55, 0};
-    m_velocity = {8, 131, 3};
+    m_velocity = {0, 131, 0};
     m_burstPosition = {};
     m_stars.clear();
     m_embers.clear();
@@ -214,7 +214,6 @@ void Simulation::step() {
         m_velocity.y -= 9.81f * dt;
         m_velocity = m_velocity * std::exp(-0.13f * dt);
         m_rocket += m_velocity * dt;
-        m_rocket.x += std::sin(t * 8.f) * 0.45f * dt;
         m_rocketTrail.push_back({m_rocket, t});
         if (m_steps % 2 == 0) {
             for (int j = 0; j < 3; ++j)

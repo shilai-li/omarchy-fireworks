@@ -138,9 +138,8 @@ omarchy-shell shell summon shilai_li.fireworks
 
 **Launch** places the shell across the frame, from hard left to hard right, or
 `random` picks a fresh spot for every launch. The stereo image leans the same
-way, so a shell that goes up on the left booms from the left. The rocket drifts
-slightly downwind as it climbs, so a burst lands a little to the right of the
-point it was launched from.
+way, so a shell that goes up on the left booms from the left. The rocket rises
+vertically and bursts directly above its launch position.
 
 Click the star icon to open the settings card. The icon never launches a show:
 an icon between the tray and the clock is too easy to hit by accident for
