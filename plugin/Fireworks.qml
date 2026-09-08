@@ -38,9 +38,8 @@ Item {
     readonly property string fontFamily: Style.font.menuFamily
 
     // -------------------------------------------------------------- lifecycle
-    property bool flying: false
+    readonly property bool flying: launches.activeCount > 0
     property bool settingsOpen: false
-    property bool mutedForShow: false
     readonly property int shellType: director.shellType
 
     // The shell reads this to decide whether a summon should open or hide us.
@@ -49,11 +48,8 @@ Item {
     function launch(quiet, shell) {
         var selected = shell === undefined ? preferences.shellType : director.shellIndex(String(shell))
         if (selected < 0) { console.warn("Fireworks: unknown shell", shell); return }
-        director.pause()
         director.shellType = selected
-        root.mutedForShow = quiet === true
-        root.flying = true
-        launchDelay.restart()
+        launches.launch(selected, quiet === true, preferences.launchX, preferences.randomLaunch)
     }
 
     function openSettings() {
@@ -78,9 +74,7 @@ Item {
     }
 
     function close() {
-        launchDelay.stop()
-        director.pause()
-        root.flying = false
+        launches.stop()
         root.closeSettings()
     }
 
@@ -189,16 +183,14 @@ Item {
     // ------------------------------------------------------------------- show
     Native.ShowDirector {
         id: director
-        audioEnabled: preferences.sound && !root.mutedForShow
-        volume: preferences.volume
-        launchX: preferences.launchX
-        randomLaunch: preferences.randomLaunch
-        onFinished: root.flying = false
+        audioEnabled: false
     }
 
-    // The panels need one layout pass before their views know how big the
-    // screen is; launching into a zero-sized view would render nothing.
-    Timer { id: launchDelay; interval: 80; onTriggered: director.launch() }
+    LaunchPool {
+        id: launches
+        sound: preferences.sound
+        volume: preferences.volume
+    }
 
     // One layer per monitor. No keyboard focus and an empty input region, so
     // the show plays in front of everything without catching a single click.
@@ -215,16 +207,22 @@ Item {
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
                 exclusionMode: ExclusionMode.Ignore
                 mask: Region {}
-                Native.FireworksView {
-                    anchors.fill: parent
-                    time: director.time
-                    seed: director.seed
-                    shellType: director.shellType
-                    // The director's resolved position, not the preference:
-                    // a random launch picks its spot there, per show.
-                    originX: director.originX
-                    bloom: preferences.bloom
-                    exposure: preferences.exposure
+                Repeater {
+                    model: launches.capacity
+                    delegate: Loader {
+                        required property int index
+                        readonly property var slot: launches.slot(index)
+                        anchors.fill: parent
+                        active: slot !== null && slot.ready
+                        sourceComponent: Native.FireworksView {
+                            time: slot.controller.time
+                            seed: slot.controller.seed
+                            shellType: slot.controller.shellType
+                            originX: slot.controller.originX
+                            bloom: preferences.bloom
+                            exposure: preferences.exposure
+                        }
+                    }
                 }
             }
         }

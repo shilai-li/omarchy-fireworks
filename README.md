@@ -177,7 +177,13 @@ omarchy-shell shell summon shilai_li.fireworks '{"shell":"palm","muted":true}'
 omarchy-shell shell call shilai_li.fireworks close ""
 ```
 
-`close` stops the current show and dismisses the settings overlay.
+`close` stops all fireworks and dismisses the settings overlay.
+
+Repeated launches overlap on the desktop: up to four shells keep independent
+timelines, styles, positions, and sound. A fifth launch replaces the oldest.
+The audio level is shared across active shells to retain mixing headroom.
+`close` stops all active and pending launches. The standalone preview still
+replays a single shell for inspection.
 
 Preferences are stored in `$XDG_CONFIG_HOME/omarchy-fireworks/settings.ini`
 (normally `~/.config/omarchy-fireworks/settings.ini`).

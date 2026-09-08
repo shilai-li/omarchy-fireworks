@@ -1,0 +1,80 @@
+import QtQuick
+import "../plugin" as Plugin
+
+Item {
+    // Force an early binding read, as Fireworks.qml does before pool delegates
+    // have been constructed. It must become true when the first slot is used.
+    property bool flying: pool.activeCount > 0
+    Plugin.LaunchPool { id: pool; sound: false }
+    property int phase: 0
+    property real firstTime: 0
+    property real visibleOrigin: 0
+    Plugin.LaunchPool { id: randomPool; sound: false }
+    Connections {
+        target: {
+            var revision = randomPool.slotRevision
+            return randomPool.slot(0)
+        }
+        function onReadyChanged() {
+            if (target.ready) visibleOrigin = target.controller.originX
+        }
+    }
+    function check(value, message) {
+        if (!value) { console.error(message); Qt.exit(1) }
+    }
+    Component.onCompleted: {
+        pool.launch(0, false, -0.5, false)
+        check(pool.activeCount === 1, "launch must immediately reserve a slot")
+        check(flying, "early-bound overlay visibility must follow slot creation")
+        randomPool.launch(0, true, 0, true)
+        check(!randomPool.slot(0).ready,
+              "a pending random launch must not render a provisional rocket")
+    }
+    Timer {
+        interval: 200; running: true; repeat: true
+        onTriggered: {
+            if (phase === 0) {
+                check(randomPool.slot(0).ready, "random launch must become visible when running")
+                check(randomPool.slot(0).controller.originX === visibleOrigin,
+                      "the position must be resolved before the first visible frame")
+                randomPool.stop()
+                check(pool.slot(0).controller.running, "first launch must start")
+                firstTime = pool.slot(0).controller.time
+                pool.launch(7, true, 0.5, false)
+                check(pool.activeCount === 2, "second launch must overlap the first")
+            } else if (phase === 1) {
+                check(pool.slot(0).controller.time > firstTime + 0.1,
+                      "second launch must not reset or pause the first clock")
+                check(pool.slot(0).controller.shellType === 0 &&
+                      pool.slot(1).controller.shellType === 7,
+                      "overlapping launches must retain independent shell types")
+                check(pool.slot(0).controller.originX < 0 && pool.slot(1).controller.originX > 0,
+                      "overlapping launches must retain their positions")
+                check(!pool.slot(0).quiet && pool.slot(1).quiet,
+                      "per-launch mute must not affect other launches")
+                for (var i = 0; i < 8; ++i) pool.launch(i, true, 0, false)
+                check(pool.activeCount === pool.capacity, "rapid launches must stay bounded")
+                for (var j = 0; j < pool.capacity; ++j)
+                    check(pool.slot(j).serial > 6, "full pool must replace the oldest launch")
+                pool.stop()
+            } else if (phase === 2) {
+                check(pool.activeCount === 0, "close must clear all pending launches")
+                for (var k = 0; k < pool.capacity; ++k)
+                    check(!pool.slot(k).controller.running, "cancelled timer must not restart audio/clock")
+                pool.launch(8, true, 0, false)
+                pool.launch(9, true, 0, false)
+            } else if (phase === 3) {
+                for (var n = 0; n < 2; ++n) {
+                    var clock = pool.slot(n).controller
+                    clock.seek(clock.duration - 0.03)
+                    clock.resume()
+                }
+            } else {
+                check(pool.activeCount === 0, "last shell finishing must release the overlay")
+                console.log("PASS: overlapping clocks, styles, positions, mute, capacity, cancellation, cleanup")
+                Qt.quit()
+            }
+            ++phase
+        }
+    }
+}

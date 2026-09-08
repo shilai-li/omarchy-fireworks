@@ -48,9 +48,11 @@ if(BUILD_TESTING)
     add_test(NAME authored-shells COMMAND fireworks-shell-tests)
     find_program(FIREWORKS_QML_EXECUTABLE qml HINTS /usr/lib/qt6/bin REQUIRED)
     configure_file(tests/import.qml.in "${CMAKE_BINARY_DIR}/tests/import.qml" @ONLY)
+    configure_file(tests/launch-pool.qml.in "${CMAKE_BINARY_DIR}/tests/launch-pool.qml" @ONLY)
     configure_file(tests/overlay.qml.in "${CMAKE_BINARY_DIR}/tests/overlay.qml" @ONLY)
     add_test(NAME native-qml-import COMMAND "${FIREWORKS_QML_EXECUTABLE}" "${CMAKE_BINARY_DIR}/tests/import.qml")
-    set_tests_properties(native-qml-import PROPERTIES
+    add_test(NAME overlapping-launches COMMAND "${FIREWORKS_QML_EXECUTABLE}" "${CMAKE_BINARY_DIR}/tests/launch-pool.qml")
+    set_tests_properties(native-qml-import overlapping-launches PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QPA_PLATFORMTHEME=generic;QT_FORCE_STDERR_LOGGING=1"
         TIMEOUT 10)
 endif()
