@@ -58,9 +58,20 @@ if(BUILD_TESTING)
 endif()
 
 # A relocatable user plugin bundle. No system or desktop files are changed here.
+# The plugin itself lives at the repo root, a sibling of backend/ (this
+# directory), so it can be `omarchy plugin add`ed directly — an Omarchy plugin
+# is cloned files only, and manifest.json has to be at the root of that clone.
+# copy_directory can't be used to gather it: the repo root also contains
+# backend/ itself, docs/, and .git — only these seven files are the plugin.
+get_filename_component(FIREWORKS_REPO_ROOT "${CMAKE_SOURCE_DIR}/.." ABSOLUTE)
+set(FIREWORKS_PLUGIN_FILES
+    Fireworks.qml BarWidget.qml FireworksState.qml LaunchPool.qml
+    fireworks-ctl.sh qmldir manifest.json)
+list(TRANSFORM FIREWORKS_PLUGIN_FILES PREPEND "${FIREWORKS_REPO_ROOT}/")
+
 add_custom_target(plugin-bundle ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/plugin/native"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/plugin" "${CMAKE_BINARY_DIR}/plugin"
+    COMMAND ${CMAKE_COMMAND} -E copy ${FIREWORKS_PLUGIN_FILES} "${CMAKE_BINARY_DIR}/plugin"
     COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:fireworksplugin>" "${CMAKE_BINARY_DIR}/plugin/native/"
     COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:fireworks_core>" "${CMAKE_BINARY_DIR}/plugin/native/"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/qml/qmldir" "${CMAKE_BINARY_DIR}/plugin/native/qmldir"

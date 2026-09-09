@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# One directory up from this script (backend/scripts/) is backend/ — the CMake
+# build root, not the git repo root. The plugin QML lives one level above that;
+# this script only needs the build outputs, so it stays scoped to backend/.
 fireworks_repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 cd -- "$fireworks_repo"
 fireworks_artifacts=${1:-artifacts}
