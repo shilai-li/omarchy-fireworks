@@ -213,3 +213,13 @@ installed-shell integration evidence,
 catalog, [docs/COLOR-VERIFICATION.md](docs/COLOR-VERIFICATION.md) for the earlier
 prismatic milestone, and [docs/VERIFICATION.md](docs/VERIFICATION.md) for the
 original golden-willow baseline.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+`plugin/fireworks-ctl.sh` adapts the marked-block hotkey-rewriting approach
+(resolve the config, refuse anything unrecognised, rewrite only the plugin's
+own block, swap it in atomically) from
+[Omafetti](https://github.com/weedwhitesandwine/omafetti)'s
+`omafetti-ctl.sh`, MIT-licensed, Copyright (c) 2026 weedwhitesandwine.
