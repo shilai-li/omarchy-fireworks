@@ -8,7 +8,7 @@ ApplicationWindow {
     width: 1440; height: 940
     minimumWidth: 540; minimumHeight: 640
     visible: true
-    title: "Omarchy Fireworks · " + director.shellName
+    title: "Fireworks · " + director.shellName
     color: "#080b11"
     palette.window: "#080b11"
     palette.text: "#eee7db"

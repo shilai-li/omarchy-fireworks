@@ -8,7 +8,7 @@ import qs.Ui
 import "native" as Native
 import "."
 
-// Omarchy Fireworks — authored shells fired over the desktop.
+// Fireworks — authored shells fired over the desktop.
 //
 // Two surfaces, deliberately different. The show is a click-through layer with
 // no keyboard focus, one per monitor, so a launch never interrupts what you

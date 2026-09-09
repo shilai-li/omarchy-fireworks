@@ -1,4 +1,4 @@
-# Omarchy Fireworks
+# Fireworks
 
 ## Product direction
 

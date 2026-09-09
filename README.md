@@ -1,4 +1,4 @@
-# Omarchy Fireworks
+# Fireworks
 
 A native fireworks renderer for the Omarchy desktop, with HDR light accumulation,
 colored bloom, historical trails, illuminated smoke, and delayed stereo sound.
@@ -157,7 +157,7 @@ removes it. The binding lives in a marked block in `~/.config/hypr/bindings.lua`
 that only this plugin writes:
 
 ```lua
--- >>> fireworks hotkey (managed by Omarchy Fireworks settings — change it there)
+-- >>> fireworks hotkey (managed by Fireworks settings — change it there)
 o.bind("SUPER + ALT + W", "Fireworks (launch a shell)", "omarchy-shell shell summon shilai_li.fireworks")
 -- <<< fireworks hotkey
 ```

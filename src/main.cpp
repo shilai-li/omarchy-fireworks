@@ -10,7 +10,7 @@
 int main(int argc, char **argv) {
     qputenv("QT_FORCE_STDERR_LOGGING", "1");
     QGuiApplication app(argc, argv);
-    QCoreApplication::setApplicationName("Omarchy Fireworks");
+    QCoreApplication::setApplicationName("Fireworks");
     QQuickStyle::setStyle("Basic");
     qmlRegisterType<FireworksView>("Omarchy.Fireworks", 1, 0, "FireworksView");
     qmlRegisterType<ShowDirector>("Omarchy.Fireworks", 1, 0, "ShowDirector");

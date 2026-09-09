@@ -1,5 +1,5 @@
 #!/bin/bash
-# Omarchy Fireworks settings helper. Runs ONLY when a hotkey is recorded or
+# Fireworks settings helper. Runs ONLY when a hotkey is recorded or
 # cleared in the Fireworks settings card — never on its own initiative.
 #
 #   fireworks-ctl.sh bind "SUPER + ALT + F"   manage the Fireworks hotkey as a
@@ -16,7 +16,7 @@ set -euo pipefail
 
 ID="shilai_li.fireworks"
 BIND_FILE="$HOME/.config/hypr/bindings.lua"
-MARK_IN="-- >>> fireworks hotkey (managed by Omarchy Fireworks settings — change it there)"
+MARK_IN="-- >>> fireworks hotkey (managed by Fireworks settings — change it there)"
 MARK_OUT="-- <<< fireworks hotkey"
 MARK_IN_KEY=">>> fireworks hotkey"
 MARK_OUT_KEY="<<< fireworks hotkey"
