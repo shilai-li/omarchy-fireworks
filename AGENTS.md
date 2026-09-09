@@ -96,7 +96,7 @@ remain unverified.
 
 - [x] The bar icon opens the settings card and never launches a show.
 - [x] In-card hotkey recording, written to a marked block in `bindings.lua`
-      by `plugin/fireworks-ctl.sh`; clearing restores the file byte for byte.
+      by `fireworks-ctl.sh`; clearing restores the file byte for byte.
 - [x] The card reports the helper's real refusal instead of a false success.
 - [x] Card follows the active Omarchy theme (`qs.Commons` / `qs.Ui`) rather
       than carrying its own colours.
@@ -186,17 +186,39 @@ See [docs/DISPLAY-VERIFICATION.md](docs/DISPLAY-VERIFICATION.md).
       not just a code comment.
 - [x] Discovered `omarchy plugin add` is clone-only — it builds nothing — so
       this repo's native `.so` output can never be produced by a plain clone.
-- [x] Split the installable plugin into its own repo,
-      [omarchy-fireworks-plugin](https://github.com/shilai-li/omarchy-fireworks-plugin),
-      with `manifest.json` at its root and an empty `native/` populated by
-      hand from this repo's build.
-- [x] Reproduced the clone-only failure for real against a fresh shell
-      process, then the working install after copying the built libraries in.
 
-Verified 2026-09-09 on the installed shell, using a local path as the plugin
-repo's git URL. See [docs/PUBLISH-VERIFICATION.md](docs/PUBLISH-VERIFICATION.md).
-Neither repo has been pushed to GitHub yet; the two repos can drift, since
-nothing keeps `plugin/`'s QML in step with its copy in the plugin repo.
+The first fix for the clone-only discovery — splitting the installable plugin
+into its own repository — was replaced the same week; see Milestone 5.1.
+See [docs/PUBLISH-VERIFICATION.md](docs/PUBLISH-VERIFICATION.md) for that
+approach as a historical record, including the reproduction methodology it
+established that Milestone 5.1 reused.
+
+### Milestone 5.1 — One repo again: root is the plugin, backend/ is the build
+
+- [x] Realized the two-repo split solved the wrong problem: the "cloned files
+      only" constraint only requires the build to happen outside
+      `omarchy plugin add`, not in a second repository —
+      `omarchy-studio-effects`'s own single-repo layout (root is the plugin,
+      `daemon/` holds the Rust source, built separately) already proved that.
+- [x] Collapsed back to one repo: `Fireworks.qml`, `BarWidget.qml`,
+      `FireworksState.qml`, `LaunchPool.qml`, `fireworks-ctl.sh`, `qmldir`, and
+      `manifest.json` moved to the repo root; `CMakeLists.txt`, `src/`,
+      `shaders/`, `qml/`, `tests/`, `scripts/`, `.clang-format` moved into
+      `backend/`. Moved with `git mv`; history follows.
+      A tracked root `native/qmldir` ships with the clone; the two `.so` files
+      stay gitignored, built from `backend/` and copied in by hand.
+- [x] Retired the sibling `omarchy-fireworks-plugin` repo — local only, never
+      pushed, fully superseded.
+- [x] Re-ran the exact clone-only reproduction from Milestone 5 against the
+      restructured repo: fresh shell process, confirmed the
+      `plugin "fireworksplugin" not found` failure against a bare clone of the
+      new root, then confirmed a working live launch after copying
+      `backend/build/plugin/native/*.so` in.
+
+Verified 2026-09-09 on the installed shell, using a local path as the plugin's
+git URL — neither this repo nor the retired sibling had been pushed to GitHub
+at verification time.
+See [docs/RESTRUCTURE-VERIFICATION.md](docs/RESTRUCTURE-VERIFICATION.md).
 
 ### Subsequent work
 

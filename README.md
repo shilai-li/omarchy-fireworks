@@ -26,10 +26,15 @@ The capture tool also needs Vulkan headers. On Arch/Omarchy:
 
 ```bash
 omarchy pkg add cmake ninja gcc qt6-base qt6-declarative qt6-shadertools qt6-multimedia vulkan-headers
+cd backend
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build -j 4
 ./build/omarchy-fireworks
 ```
+
+The repo root is the Omarchy plugin itself (`manifest.json`, `Fireworks.qml`,
+`BarWidget.qml`, ...); the native engine, renderer, and this standalone preview
+live in `backend/` and build there, one level down.
 
 The preview opens on a paused frame. Choose a shell in the selector, then use
 **Launch shell**, or press **R**, to
@@ -84,7 +89,7 @@ HDR scene → bloom → tone mapping → transparent overlay
 - **Display** decides how much one trigger sends up: `one shell`, a `volley` of
   four of the chosen shell, or a `full show` of six — mixed from the catalog and
   ending on a two-shell finale of the one you picked. The schedules live in one
-  table in `plugin/LaunchPool.qml` and are spaced so no more than four shells are
+  table in `LaunchPool.qml` and are spaced so no more than four shells are
   ever in the air at once, because the fifth would evict a shell still burning.
 
 QRhi is a Qt API with limited binary compatibility. Rebuild the native module
@@ -95,9 +100,9 @@ and [QRhi](https://doc.qt.io/qt-6/qrhi.html).
 ## Verification
 
 ```bash
-ctest --test-dir build --output-on-failure
-omarchy plugin validate build/plugin
-./build/fireworks-capture artifacts/shells/chrysanthemum --shell chrysanthemum
+ctest --test-dir backend/build --output-on-failure
+omarchy plugin validate backend/build/plugin
+./backend/build/fireworks-capture backend/artifacts/shells/chrysanthemum --shell chrysanthemum
 ```
 
 The windowless capture tool uses the desktop's platform Vulkan integration. Run
@@ -114,43 +119,52 @@ Reported timings include GPU completion and readback, not just rendering.
 To capture the full animation:
 
 ```bash
-./build/fireworks-capture artifacts/shells/palm --shell palm --sequence
-ffmpeg -y -framerate 30 -i artifacts/shells/palm/sequence/frame-%04d.png -i artifacts/shells/palm/show.wav -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest artifacts/shells/palm/show.mp4
+./backend/build/fireworks-capture backend/artifacts/shells/palm --shell palm --sequence
+ffmpeg -y -framerate 30 -i backend/artifacts/shells/palm/sequence/frame-%04d.png -i backend/artifacts/shells/palm/show.wav -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest backend/artifacts/shells/palm/show.mp4
 ```
 
-`bash scripts/verify-live.sh artifacts/shells` briefly opens the preview,
-saves a screenshot of its own window, then launches a muted Quickshell overlay
-on connected monitors.
+`bash backend/scripts/verify-live.sh backend/artifacts/shells` briefly opens
+the preview, saves a screenshot of its own window, then launches a muted
+Quickshell overlay on connected monitors.
 The overlay selects and runs all three new shells, then exits after about
-35.4 seconds. Test settings and caches stay in `build/`.
+35.4 seconds. Test settings and caches stay in `backend/build/`.
 Window screenshots can retain stale contents during compositor tiling; use the
 direct GPU captures for reliable visual review. The live script checks startup,
 renderer initialization, settings, and lifecycle, not screenshot pixel contents.
 
 ## Omarchy plugin bundle
 
-The build produces a self-contained plugin in `build/plugin/`, including its
-native libraries. Its ID is `shilai_li.fireworks`; it is separate from Omafetti.
-The reference Omafetti installation is not changed by the build or tests.
+The repo root *is* the plugin — `manifest.json`, `Fireworks.qml`,
+`BarWidget.qml`, and the rest sit at the top level, the way `omarchy plugin
+add` needs them to. Its ID is `shilai_li.fireworks`; it is separate from
+Omafetti, and the reference Omafetti installation is not changed by the build
+or tests.
 
-An Omarchy plugin is cloned files only — `omarchy plugin add` builds nothing and
-runs nothing — so the installable plugin lives in its own repo,
-[omarchy-fireworks-plugin](https://github.com/shilai-li/omarchy-fireworks-plugin),
-with an empty `native/` that you populate from this repo's build:
+An Omarchy plugin is cloned files only — `omarchy plugin add` builds nothing
+and runs nothing — but Fireworks needs two compiled Qt/QRhi libraries that
+Quickshell loads directly (`import "native"`), not a daemon reached over IPC.
+So a plain `omarchy plugin add` installs and enables the plugin with an empty
+`native/`, and it will not render anything until you build `backend/` and copy
+its output in:
 
 ```bash
-omarchy plugin add https://github.com/shilai-li/omarchy-fireworks-plugin.git --enable
-cp build/plugin/native/*.so ~/.config/omarchy/plugins/shilai_li.fireworks/native/
+cd backend
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build -j 4
+cd ..
+
+omarchy plugin add https://github.com/shilai-li/omarchy-fireworks.git --enable
+cp backend/build/plugin/native/*.so ~/.config/omarchy/plugins/shilai_li.fireworks/native/
 omarchy-shell shell rescanPlugins
 ```
 
 For local development — testing a change against the running shell without
-publishing anything — `build/plugin/` in *this* repo is already the complete
-bundle, native libraries included; copy it into
+publishing anything — `backend/build/plugin/` is already the complete bundle,
+native libraries included; copy it into
 `~/.config/omarchy/plugins/shilai_li.fireworks/` directly:
 
 ```bash
-cp -a build/plugin ~/.config/omarchy/plugins/shilai_li.fireworks
+cp -a backend/build/plugin ~/.config/omarchy/plugins/shilai_li.fireworks
 omarchy-shell shell rescanPlugins
 omarchy plugin enable shilai_li.fireworks
 omarchy-shell shell summon shilai_li.fireworks
@@ -176,7 +190,7 @@ o.bind("SUPER + ALT + W", "Fireworks (launch a shell)", "omarchy-shell shell sum
 -- <<< fireworks hotkey
 ```
 
-`plugin/fireworks-ctl.sh` does that writing, and refuses a bindings.lua it does
+`fireworks-ctl.sh` does that writing, and refuses a bindings.lua it does
 not recognise — missing, not a regular file the user owns, over a megabyte, or
 with its marked block already damaged — rather than guessing. Clearing restores
 the file byte for byte. The card reports the script's own refusal message when
@@ -220,10 +234,10 @@ in your user bindings. The plugin does not rewrite bindings automatically.
 Native-library updates require a shell restart. Avoid overwriting shared
 libraries while the shell has them loaded; stage an updated bundle and replace
 it while the shell is stopped. QML-only settings changes can hot-reload normally.
-`omarchy plugin update shilai_li.fireworks` pulls
-[omarchy-fireworks-plugin](https://github.com/shilai-li/omarchy-fireworks-plugin)'s
-QML but, being a plain git pull, cannot know to also copy a rebuilt `.so` — do
-that `cp` yourself after `omarchy restart shell`, then restart it again.
+`omarchy plugin update shilai_li.fireworks` pulls this repo's QML but, being a
+plain git pull, cannot know to also rebuild and copy a `.so` — do
+`cd backend && cmake --build build -j 4` and the `cp .../native/*.so` step
+yourself after `omarchy restart shell`, then restart it again.
 
 See [docs/INSTALL-VERIFICATION.md](docs/INSTALL-VERIFICATION.md) for the
 installed-shell integration evidence,
@@ -236,7 +250,7 @@ original golden-willow baseline.
 
 MIT — see [LICENSE](LICENSE).
 
-`plugin/fireworks-ctl.sh` adapts the marked-block hotkey-rewriting approach
+`fireworks-ctl.sh` adapts the marked-block hotkey-rewriting approach
 (resolve the config, refuse anything unrecognised, rewrite only the plugin's
 own block, swap it in atomically) from
 [Omafetti](https://github.com/weedwhitesandwine/omafetti)'s

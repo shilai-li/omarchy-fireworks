@@ -96,3 +96,13 @@ and removal instructions.
 - The two repos can drift: `plugin/`'s QML in this repo and the plugin repo's
   copy are not otherwise linked. No mechanism (subtree, submodule, or sync
   script) keeps them in step yet; for now, changes need to be applied to both.
+
+**Superseded 2026-09-09.** The two-repo split above solved the wrong problem —
+`omarchy-studio-effects`'s own single-repo layout (root is the plugin, a
+`daemon/` subfolder holds the separately-built native component) already
+showed that the "cloned files only" constraint just requires the build to
+happen outside `omarchy plugin add`, not in a second repository. Collapsed
+back to one repo, root as the plugin, `backend/` as the native build; the
+sibling repo referenced throughout this document has been removed. See
+[docs/RESTRUCTURE-VERIFICATION.md](docs/RESTRUCTURE-VERIFICATION.md). This
+document is kept as the record of what was verified at the time.
