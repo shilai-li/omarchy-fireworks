@@ -6,12 +6,14 @@ Build cinematic fireworks for the Omarchy desktop. Judge the result by convincin
 light, depth, motion, and choreography. The reference architecture is a starting
 point; make implementation choices that improve the visible result.
 
-Build colorful, authored shells: a crimson/cyan chrysanthemum, an emerald/cyan
-palm, and a violet/cyan willow, with changing tips and golden crackle finishes.
-The chrysanthemum is the default; retain the original eight-color prismatic
-willow as an option. Keep distinct hues through bloom and fading. Historical
-trails retain their emission colors rather than changing all at once. A golden
-finish is intentional, but do not revert the whole effect to monochrome gold.
+Build colorful, authored shells with changing tips and golden crackle finishes:
+a crimson/cyan chrysanthemum (the default), an emerald/cyan palm, a violet/cyan
+willow, a sapphire/rose ring, a rose/sapphire peony, a lime/cyan crossette that
+breaks mid-flight, a rose/cyan heart, an amber Saturn, and a violet/cyan spiral.
+Retain the original eight-color prismatic willow as an option. Keep distinct
+hues through bloom and fading. Historical trails retain their emission colors
+rather than changing all at once. A golden finish is intentional, but do not
+revert the whole effect to monochrome gold.
 
 ## Architecture
 
@@ -126,6 +128,42 @@ Verified 2026-09-08. See [docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md
 
 Verified 2026-09-08. The default launch moved from x=-26 to true centre, so
 every capture set was retaken. See [docs/SHELL-VERIFICATION.md](docs/SHELL-VERIFICATION.md).
+
+### Milestone 3.2 — Straight ascent
+
+- [x] Rocket ascent holds its launch x and depth fixed; no lateral/depth
+      velocity or sinusoidal wobble on the way up.
+- [x] Gravity and drag still slow the climb; shed embers and smoke still drift.
+- [x] Engine test checks every step through burst at left, centre, and right
+      launch positions with wind enabled.
+
+Verified 2026-09-08. See [docs/STRAIGHT-LAUNCH-VERIFICATION.md](docs/STRAIGHT-LAUNCH-VERIFICATION.md).
+
+### Milestone 3.3 — Heart, Saturn, and spiral
+
+- [x] Three more authored shells, appended at indices 7-9 so saved preferences
+      keep their meaning: a rose/cyan heart, an amber Saturn, a violet/cyan spiral.
+- [x] Shape tests: the heart's notch, lobes, tip and plane; Saturn's separated
+      planet and planar orbit; the spiral's increasing radius and curvature.
+- [x] Per-shell Vulkan captures and live installed-shell IPC launches.
+
+Verified 2026-09-08 with seed 73; ten shells share one native catalog with no
+duplicate QML lists. See [docs/SHAPED-SHELL-VERIFICATION.md](docs/SHAPED-SHELL-VERIFICATION.md).
+
+### Milestone 3.4 — Overlapping launches
+
+- [x] Four fixed launch slots, each its own native `ShowDirector`: independent
+      clock, seed, shell, resolved position, and audio.
+- [x] A fifth launch replaces the oldest slot, cancelling its pending start too.
+- [x] Closing the plugin cancels every pending timer and running show.
+- [x] Fixed a provisional-position flash: a pending random launch no longer
+      renders before its final placement resolves.
+
+Verified 2026-09-08 on the installed shell, OpenGL / Intel Arc B390, 3072x1920.
+Four CTest suites pass, including the new overlapping-launch test. Four
+full-screen render targets can cost more GPU/memory than one; frame rate and
+multi-monitor behavior remained unmeasured here (see Milestone 4 for the
+measurement). See [docs/OVERLAP-VERIFICATION.md](docs/OVERLAP-VERIFICATION.md).
 
 ### Milestone 4 — One trigger, a whole display
 
