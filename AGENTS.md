@@ -177,6 +177,27 @@ measurement). See [docs/OVERLAP-VERIFICATION.md](docs/OVERLAP-VERIFICATION.md).
 Verified 2026-09-08 on the installed shell.
 See [docs/DISPLAY-VERIFICATION.md](docs/DISPLAY-VERIFICATION.md).
 
+### Milestone 5 — Publish readiness
+
+- [x] MIT `LICENSE`, matching the sibling Omarchy plugins' text and copyright.
+- [x] `manifest.json` license field, author casing, and a description that
+      covers all ten shells rather than the original three.
+- [x] Proper MIT notice for `fireworks-ctl.sh`'s Omafetti-derived approach,
+      not just a code comment.
+- [x] Discovered `omarchy plugin add` is clone-only — it builds nothing — so
+      this repo's native `.so` output can never be produced by a plain clone.
+- [x] Split the installable plugin into its own repo,
+      [omarchy-fireworks-plugin](https://github.com/shilai-li/omarchy-fireworks-plugin),
+      with `manifest.json` at its root and an empty `native/` populated by
+      hand from this repo's build.
+- [x] Reproduced the clone-only failure for real against a fresh shell
+      process, then the working install after copying the built libraries in.
+
+Verified 2026-09-09 on the installed shell, using a local path as the plugin
+repo's git URL. See [docs/PUBLISH-VERIFICATION.md](docs/PUBLISH-VERIFICATION.md).
+Neither repo has been pushed to GitHub yet; the two repos can drift, since
+nothing keeps `plugin/`'s QML in step with its copy in the plugin repo.
+
 ### Subsequent work
 
 1. Show choreography, coordinated monitor views, and richer sound design.

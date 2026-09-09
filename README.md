@@ -133,10 +133,24 @@ The build produces a self-contained plugin in `build/plugin/`, including its
 native libraries. Its ID is `shilai_li.fireworks`; it is separate from Omafetti.
 The reference Omafetti installation is not changed by the build or tests.
 
-For an initial installation, copy this bundle into
-`~/.config/omarchy/plugins/shilai_li.fireworks/`, then run:
+An Omarchy plugin is cloned files only — `omarchy plugin add` builds nothing and
+runs nothing — so the installable plugin lives in its own repo,
+[omarchy-fireworks-plugin](https://github.com/shilai-li/omarchy-fireworks-plugin),
+with an empty `native/` that you populate from this repo's build:
 
 ```bash
+omarchy plugin add https://github.com/shilai-li/omarchy-fireworks-plugin.git --enable
+cp build/plugin/native/*.so ~/.config/omarchy/plugins/shilai_li.fireworks/native/
+omarchy-shell shell rescanPlugins
+```
+
+For local development — testing a change against the running shell without
+publishing anything — `build/plugin/` in *this* repo is already the complete
+bundle, native libraries included; copy it into
+`~/.config/omarchy/plugins/shilai_li.fireworks/` directly:
+
+```bash
+cp -a build/plugin ~/.config/omarchy/plugins/shilai_li.fireworks
 omarchy-shell shell rescanPlugins
 omarchy plugin enable shilai_li.fireworks
 omarchy-shell shell summon shilai_li.fireworks
@@ -206,6 +220,10 @@ in your user bindings. The plugin does not rewrite bindings automatically.
 Native-library updates require a shell restart. Avoid overwriting shared
 libraries while the shell has them loaded; stage an updated bundle and replace
 it while the shell is stopped. QML-only settings changes can hot-reload normally.
+`omarchy plugin update shilai_li.fireworks` pulls
+[omarchy-fireworks-plugin](https://github.com/shilai-li/omarchy-fireworks-plugin)'s
+QML but, being a plain git pull, cannot know to also copy a rebuilt `.so` — do
+that `cp` yourself after `omarchy restart shell`, then restart it again.
 
 See [docs/INSTALL-VERIFICATION.md](docs/INSTALL-VERIFICATION.md) for the
 installed-shell integration evidence,
