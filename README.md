@@ -159,8 +159,7 @@ and runs nothing — but Fireworks needs two compiled Qt/QRhi libraries that
 Quickshell loads directly (`import "native"`), not a daemon reached over IPC.
 On a fresh install, the plugin opens a setup card before loading its native
 module. Setup and settings open in a bar-anchored popup, like Studio Effects.
-No prebuilt release is currently published; choose **Build from source**.
-When a release is available, choose **Use prebuilt** to download its libraries, or
+Choose **Use prebuilt** to download the v0.1.0 native libraries, or
 **Build from source** (also Enter) to compile them yourself. Both choices open
 the centered floating Omarchy terminal with progress and any errors (with a
 standard-terminal fallback if the floating launcher is unavailable). After
