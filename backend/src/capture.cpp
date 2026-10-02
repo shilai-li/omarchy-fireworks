@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
                         << invalid;
             return 1;
         }
-        if (shellType == fireworks::ShellType::Prismatic && (i == 2 || i == 3) &&
+        if (shell.multicolor && (i == 2 || i == 3) &&
             *std::min_element(huePixels.begin(), huePixels.end()) < 100) {
             qCritical() << "Color validation failed: burst and falling trails must span all six hue sectors";
             return 1;

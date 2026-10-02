@@ -13,14 +13,14 @@ Item {
     // How many shells the catalog holds, so a mixed display can pick from it.
     // Set by the overlay from the director rather than hardcoded here.
     property int shellCount: 1
+    property real fullShowInterval: 3.0
 
     // A slot is held for the whole of a shell's life, so "alive" means every
     // shell lifted within this many seconds. Must match Simulation::Duration.
     readonly property real shellLife: 11.0
 
-    // What one trigger fires. `lifts` are seconds after the trigger; the last
-    // `finale` entries form a separated pair of different shells; the last
-    // shell is the chosen one, so a mixed display still ends on what was picked.
+    // What one trigger fires. `lifts` are seconds after the trigger. Mixed
+    // displays reserve the selected shell for the last lift.
     //
     // The schedules are spaced to peak at `capacity` and no higher — the fifth
     // concurrent launch evicts the oldest slot mid-flight, which would cut a
@@ -29,10 +29,20 @@ Item {
     // and 2.5 GiB. Peaking higher was measured to be the wrong trade, so a
     // longer display is spread out rather than stacked deeper.
     readonly property var displays: [
-        { name: "one shell", lifts: [0], mixed: false, finale: 0 },
-        { name: "volley", lifts: [0, 1.3, 2.6, 3.9], mixed: false, finale: 0 },
-        { name: "full show", lifts: [0, 2.8, 5.6, 8.4, 14.2, 14.6], mixed: true, finale: 2, randomLaunch: true }
+        { name: "one shell", lifts: [0], mixed: false },
+        { name: "volley", lifts: [0, 1.3, 2.6, 3.9], mixed: true },
+        { name: "full show", lifts: fullShowLifts(), mixed: true, randomLaunch: true }
     ]
+
+    function fullShowLifts() {
+        var lifts = []
+        // Three seconds is the fastest interval that keeps eleven-second
+        // shells within four slots. Snapshot these lifts when a show starts.
+        // Derive the count from the catalog so future shells are included too.
+        var interval = isFinite(pool.fullShowInterval) ? Math.max(3, Math.min(12, pool.fullShowInterval)) : 3
+        for (var i = 0; i < pool.shellCount; ++i) lifts.push(i * interval)
+        return lifts
+    }
 
     // The schedule in flight, if any. A display is a queue of launches, so it
     // outlives the call that started it and has to be cancellable.
@@ -42,7 +52,7 @@ Item {
     property bool pendingQuiet: false
     property real pendingLaunchX: 0
     property bool pendingRandom: false
-    property int finaleSide: 1
+    property int displaySeed: 1
     readonly property bool scheduled: pool.pendingStep >= 0
     readonly property int activeCount: {
         // itemAt() is not a notifying property. Re-evaluate after delegates
@@ -75,7 +85,19 @@ Item {
     // reproducible and two triggers in a row do not draw the same sequence.
     function mixedShell(step) {
         if (pool.shellCount <= 1) return pool.pendingShell
-        return ((pool.serial * 7919 + step * 104729) % 2147483647) % pool.shellCount
+        // Shuffle once from the display seed rather than stepping modulo the
+        // catalog size: at sixteen shells the old stride repeated two entries.
+        // Keep the selected shell for the final lift.
+        var choices = []
+        for (var i = 0; i < pool.shellCount; ++i)
+            if (i !== pool.pendingShell) choices.push(i)
+        for (var j = choices.length - 1; j > 0; --j) {
+            var pick = Math.floor(displayRandom(j + 97) * (j + 1))
+            var saved = choices[j]
+            choices[j] = choices[pick]
+            choices[pick] = saved
+        }
+        return choices[step % choices.length]
     }
 
     // One trigger, one whole display. The first shell goes up at once; the
@@ -84,13 +106,13 @@ Item {
         cancelPending()
         var index = Math.max(0, Math.min(pool.displays.length - 1, size))
         pool.pendingPlan = pool.displays[index]
+        pool.displaySeed = pool.serial + 1
         pool.pendingShell = shell
         pool.pendingQuiet = quiet === true
         pool.pendingLaunchX = launchX
         // Full shows scatter every lift, including the finale. Other displays
         // follow the user's launch-position setting.
         pool.pendingRandom = pool.pendingPlan.randomLaunch === true || randomLaunch === true
-        pool.finaleSide = displayRandom(0) < 0.5 ? -1 : 1
         pool.pendingStep = 0
         fireStep()
     }
@@ -102,7 +124,7 @@ Item {
     }
 
     function displayRandom(step) {
-        var state = ((pool.serial + 1) * 7919 + step * 104729) | 0
+        var state = (pool.displaySeed * 7919 + step * 104729) | 0
         state ^= state << 13
         state ^= state >>> 17
         state ^= state << 5
@@ -120,15 +142,6 @@ Item {
         var shell = plan.mixed && !last ? mixedShell(step) : pool.pendingShell
         var launchX = pool.pendingLaunchX
         var randomLaunch = pool.pendingRandom
-        if (plan.mixed && step >= plan.lifts.length - plan.finale) {
-            // Pair different shells on opposite sides, with randomized order
-            // and distance from centre. Resolve here so native random placement
-            // cannot pull the two nearly simultaneous lifts together again.
-            if (!last && shell === pool.pendingShell && pool.shellCount > 1)
-                shell = (shell + 1) % pool.shellCount
-            launchX = pool.finaleSide * (last ? -1 : 1) * (0.55 + 0.4 * displayRandom(step + 1))
-            randomLaunch = false
-        }
         launch(shell, pool.pendingQuiet, launchX, randomLaunch)
         pool.pendingStep = step + 1
         if (pool.pendingStep >= plan.lifts.length) {

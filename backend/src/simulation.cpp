@@ -58,7 +58,7 @@ void Simulation::explode() {
     m_burstPosition = m_rocket;
     const auto &shell = shellDefinition(m_shellType);
     const int count = shell.stars;
-    const bool prismatic = m_shellType == ShellType::Prismatic;
+    const bool prismatic = shell.multicolor;
     for (int i = 0; i < count; ++i) {
         // Fibonacci shell with restrained jitter: an organic sphere, with depth.
         const float y = 1.f - 2.f * (i + 0.5f) / count;
@@ -74,7 +74,7 @@ void Simulation::explode() {
         star.color = prismatic    ? prismaticColor(std::size_t(i), m_seed)
                      : i % 3 == 0 ? shell.secondary
                                   : shell.primary;
-        star.finalColor = prismatic ? star.color : SparkColor::Amber;
+        star.finalColor = m_shellType == ShellType::Prismatic ? star.color : SparkColor::Amber;
         star.transitionStart = shell.transitionStart;
         star.transitionEnd = shell.transitionEnd;
         if (m_shellType == ShellType::Chrysanthemum) {
@@ -148,6 +148,71 @@ void Simulation::explode() {
             // it breaks, so it has to be bright enough to follow until it does.
             star.color = i % 4 == 0 ? shell.secondary : shell.primary;
             star.energy *= 1.55f;
+        } else if (m_shellType == ShellType::Carnival) {
+            // Three concentric, slightly tilted rings. Hue sectors rotate
+            // between layers so each band carries a complete eight-color wheel.
+            const int layer = i % 3;
+            const int bead = i / 3;
+            const float a = float(bead) / (count / 3) * 6.283185f;
+            const float reach = shell.speedMax - layer * 25;
+            star.velocity = {std::cos(a) * reach, std::sin(a) * reach * 0.86f,
+                             std::sin(a) * reach * 0.51f};
+            star.color = SparkColor((bead / 18 + layer * 3 + m_seed % 8) % 8);
+            star.energy *= 1.3f;
+        } else if (m_shellType == ShellType::Waterfall || m_shellType == ShellType::RainbowRain) {
+            // Twenty-eight separated streamers spread sideways in a shallow
+            // canopy. Dense beads along each streamer leave a falling curtain.
+            const int strand = i / 8;
+            const float u = float(strand) / 27 * 2 - 1;
+            const float bead = 0.80f + float(i % 8) * 0.028f;
+            star.velocity = {u * shell.speedMax * bead,
+                             (14 + 28 * (1 - u * u)) * bead + random(-1.f, 1.f),
+                             std::sin(strand * 2.399963f) * 13 * bead};
+            star.color = prismatic ? prismaticColor(strand, m_seed)
+                                   : strand % 4 < 2 ? shell.primary : shell.secondary;
+            star.lifetime += (1 - std::abs(u)) * 0.3f;
+            star.energy *= i % 8 == 7 ? 1.6f : 0.85f;
+        } else if (m_shellType == ShellType::Dahlia || m_shellType == ShellType::Bouquet) {
+            // Sixteen narrow petal bundles with layered radial beads, plus a
+            // slow spherical pistil. Depth varies by petal, opening the flower.
+            const int petals = prismatic ? 24 : 16;
+            const int beads = prismatic ? 12 : 16;
+            const int outer = petals * beads;
+            if (i < outer) {
+                const int petal = i / beads;
+                const float a = petal * 6.283185f / petals + random(-0.018f, 0.018f);
+                const float reach = shell.speedMin + (shell.speedMax - shell.speedMin) * (i % beads) / (beads - 1);
+                star.velocity = {std::cos(a) * reach, std::sin(a) * reach,
+                                 std::sin(petal * 2.399963f) * reach * 0.18f};
+                star.color = prismatic ? prismaticColor(petal, m_seed)
+                                      : petal % 4 == 0 ? shell.secondary : shell.primary;
+                star.energy *= i % beads == beads - 1 ? 1.8f : 1.0f;
+            } else {
+                const float py = 1.f - 2.f * (i - outer + 0.5f) / (count - outer);
+                const float pr = std::sqrt(1 - py * py);
+                const float pa = (i - outer) * 2.39996323f;
+                star.velocity = {pr * std::cos(pa) * 22, py * 22, pr * std::sin(pa) * 22};
+                star.color = prismatic ? prismaticColor(i, m_seed) : shell.secondary;
+                star.energy *= 1.5f;
+                star.transitionStart = prismatic ? 0.78f : 0.62f;
+                star.transitionEnd = prismatic ? 0.98f : 0.94f;
+            }
+        } else if (m_shellType == ShellType::Star) {
+            // Two bands following ten straight outline edges. Interpolating
+            // the vertices preserves pointed tips and deep concave notches.
+            const int point = i / 2;
+            const float edge = float(point) / (count / 2) * 10;
+            const int vertex = int(edge);
+            const float u = edge - vertex;
+            const float a = 1.5707963f + vertex * 0.62831853f;
+            const float b = a + 0.62831853f;
+            const float ra = vertex % 2 ? shell.speedMin : shell.speedMax;
+            const float rb = vertex % 2 ? shell.speedMax : shell.speedMin;
+            const float band = i % 2 ? 0.91f : 1.f;
+            star.velocity = {(std::cos(a) * ra * (1 - u) + std::cos(b) * rb * u) * band,
+                             (std::sin(a) * ra * (1 - u) + std::sin(b) * rb * u) * band, 0};
+            star.color = i % 2 ? shell.secondary : shell.primary;
+            star.energy *= 1.3f;
         } else if (m_shellType == ShellType::Palm) {
             // Twelve narrow 3D bundles, not a sparse spherical explosion.
             const int frond = i / 8;

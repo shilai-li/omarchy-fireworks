@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(OmarchyFireworks VERSION 0.1.0 LANGUAGES CXX)
+project(OmarchyFireworks VERSION 0.2.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
@@ -65,8 +65,8 @@ endif()
 # backend/ itself, docs/, and .git — only these seven files are the plugin.
 get_filename_component(FIREWORKS_REPO_ROOT "${CMAKE_SOURCE_DIR}/.." ABSOLUTE)
 set(FIREWORKS_PLUGIN_FILES
-    Fireworks.qml BarWidget.qml FireworksState.qml LaunchPool.qml
-    fireworks-ctl.sh qmldir manifest.json)
+    Fireworks.qml FireworksEffect.qml BarWidget.qml FireworksState.qml LaunchPool.qml
+    fireworks-build.sh fireworks-prebuilt.sh prebuilt.json fireworks-ctl.sh qmldir manifest.json)
 list(TRANSFORM FIREWORKS_PLUGIN_FILES PREPEND "${FIREWORKS_REPO_ROOT}/")
 
 add_custom_target(plugin-bundle ALL

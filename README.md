@@ -15,6 +15,12 @@ colored bloom, historical trails, illuminated smoke, and delayed stereo sound.
 | Rose heart | A rose and cyan double outline with a clear notch and pointed tip. |
 | Amber Saturn | A compact amber sphere inside a wide, tilted cyan orbit. |
 | Violet spiral | Three curved violet/cyan arms expand and fade into golden sparks. |
+| Aurora waterfall | A wide cyan/violet canopy cascades into long golden rain. |
+| Ruby dahlia | Sixteen ruby/cyan petals open around a bright cyan pistil. |
+| Sapphire star | A five-point sapphire outline edged in rose, with a gold finish. |
+| Rainbow bouquet | Twenty-four petals in eight vivid hues around a multicolor pistil. |
+| Carnival rings | Three nested rainbow color wheels with short sparkling trails. |
+| Rainbow rain | Eight jewel colors cascade from a wide canopy, turning gold late. |
 
 The product direction and milestone checklist live in [AGENTS.md](AGENTS.md).
 
@@ -74,7 +80,10 @@ HDR scene → bloom → tone mapping → transparent overlay
   and burn later the further in they sit. A crossette star is replaced mid-flight
   by four children thrown across its line of flight, which is the one shell whose
   star count grows after the burst; children inherit the parent's colour and its
-  burn progress rather than starting cold. The three new shells transition from coordinated colors to gold;
+  burn progress rather than starting cold. The waterfall spreads a shallow canopy
+  into long falling streamers; the dahlia bundles sixteen layered petals around
+  a slow cyan pistil; the star follows a double five-point outline. Authored shells
+  transition from coordinated colors to gold;
   historical trails retain their emission colors and shed embers inherit their
   birth color. Prismatic stars keep their original eight-color identities.
   Pale-hot cores and intensity-based tone mapping preserve colored bloom.
@@ -87,13 +96,15 @@ HDR scene → bloom → tone mapping → transparent overlay
   Audio preparation is cached by seed and shell, with shell-specific crackle timing.
   Playback currently requires an output supporting 48 kHz stereo 16-bit PCM.
 - **Display** decides how much one trigger sends up: `one shell`, a `volley` of
-  four of the chosen shell, or a `full show` of six — mixed from the catalog and
-  ending on a two-shell finale of different shells, with the one you picked last.
-  The finale launches on opposite sides with random offsets. Every shell in a full show
-  launches at a random horizontal position, including the finale; one shell and
-  volley follow the launch-position setting. The schedules live in one
-  table in `LaunchPool.qml` and are spaced so no more than four shells are
-  ever in the air at once, because the fifth would evict a shell still burning.
+  four different shells ending on your choice, or a `full show` of every catalog
+  style, once each in shuffled order, with your choice last. The **Interval** slider
+  appears when Full show is selected and saves a 3–12 second gap between launches.
+  At the default three seconds, sixteen styles take about 56 seconds including
+  the final fade; slower settings give each shell more time on its own. Changes
+  apply to the next show. Every full-show lift uses a
+  random horizontal position; one shell and volley follow the launch-position
+  setting. The catalog automatically determines the full-show length. Volley
+  and full show peak at four active shells.
 
 QRhi is a Qt API with limited binary compatibility. Rebuild the native module
 after Qt upgrades; do not carry its binaries between incompatible Qt builds.
@@ -146,9 +157,30 @@ or tests.
 An Omarchy plugin is cloned files only — `omarchy plugin add` builds nothing
 and runs nothing — but Fireworks needs two compiled Qt/QRhi libraries that
 Quickshell loads directly (`import "native"`), not a daemon reached over IPC.
-So a plain `omarchy plugin add` installs and enables the plugin with an empty
-`native/`, and it will not render anything until you build `backend/` and copy
-its output in:
+On a fresh install, the plugin opens a setup card before loading its native
+module. Choose **Use prebuilt** to download the published libraries, or
+**Build from source** (also Enter) to compile them yourself. Both choices open
+the configured Omarchy terminal with progress and any errors; press Enter when
+setup finishes to close it. Escape closes the card; the bar icon opens it again.
+
+The prebuilt option requires Linux x86_64 and the exact Arch Qt package versions
+recorded in [prebuilt.json](prebuilt.json). It verifies the release's SHA-256
+checksum and shared-library dependencies before installing anything. It needs
+`curl`, `jq`, Python and the Qt runtime packages, but no compiler or CMake.
+If your Qt packages differ, choose **Build from source**. QRhi uses private Qt
+APIs, so binaries must be rebuilt after incompatible Qt changes.
+
+The source option does not install system packages: install the dependencies
+listed under Build and preview first. During either setup, Fireworks is paused;
+successful setup restarts the Omarchy shell and re-enables the plugin to load
+the new libraries safely.
+
+```bash
+omarchy plugin add https://github.com/shilai-li/omarchy-fireworks.git --enable
+# In the Fireworks notice, choose Use prebuilt or Build from source.
+```
+
+You can also build and install manually:
 
 ```bash
 cd backend
@@ -234,9 +266,16 @@ omarchy-shell shell summon shilai_li.fireworks '{"view":"settings"}'
 A Hyprland hotkey can invoke the same summon command. Choose an unused shortcut
 in your user bindings. The plugin does not rewrite bindings automatically.
 
+Inspect the live display and active shell types with:
+
+```bash
+omarchy-shell shell call shilai_li.fireworks status ""
+```
+
 Native-library updates require a shell restart. Avoid overwriting shared
 libraries while the shell has them loaded; stage an updated bundle and replace
-it while the shell is stopped. QML-only settings changes can hot-reload normally.
+it while the shell is stopped. QML changes normally hot-reload; if a rescan leaves
+old behavior active, restart the shell and verify actual launches with `status`.
 `omarchy plugin update shilai_li.fireworks` pulls this repo's QML but, being a
 plain git pull, cannot know to also rebuild and copy a `.so` — do
 `cd backend && cmake --build build -j 4` and the `cp .../native/*.so` step

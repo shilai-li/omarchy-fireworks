@@ -39,16 +39,77 @@ int main() {
                 }
                 require(high - low < 0.12f, "palm stars must stay grouped into narrow fronds");
             }
+        } else if (type == ShellType::Waterfall || type == ShellType::RainbowRain) {
+            require(upward == style.stars, "waterfall must spread into an upward canopy");
+            float left = 0, right = 0;
+            for (const auto &s : direct.stars()) {
+                left = std::min(left, s.velocity.x);
+                right = std::max(right, s.velocity.x);
+                require(s.velocity.y < 46 && std::abs(s.velocity.z) < 14,
+                        "waterfall must form a shallow curtain rather than a sphere");
+            }
+            require(left < -85 && right > 85, "waterfall curtain must spread widely on both sides");
         } else
             require(upward > style.stars / 3 && upward < style.stars * 2 / 3,
                     "spherical shells must expand both upward and downward");
-        if (type != ShellType::Prismatic)
+        if (!style.multicolor)
             require(primary > 0 && secondary > 0 && primary + secondary == style.stars,
                     "authored shells must begin with a coordinated two-color palette");
+        else {
+            std::array<int, SparkPalette.size()> colors{};
+            for (const auto &s : direct.stars()) {
+                ++colors[std::size_t(s.color)];
+                if (type != ShellType::Prismatic)
+                    require(s.transitionStart >= 0.7f && s.finalColor == SparkColor::Amber,
+                            "rainbow shells must keep their colors until a late gold finish");
+            }
+            for (int population : colors)
+                require(population >= 8, "multicolor shells must carry all eight authored hues");
+        }
         auto speedOf = [](const Star &s) {
             return std::sqrt(s.velocity.x * s.velocity.x + s.velocity.y * s.velocity.y +
                              s.velocity.z * s.velocity.z);
         };
+        if (type == ShellType::Dahlia || type == ShellType::Bouquet) {
+            const int petals = style.multicolor ? 24 : 16;
+            const int beads = style.multicolor ? 12 : 16;
+            for (int petal = 0; petal < petals; ++petal) {
+                const auto first = direct.stars()[petal * beads].velocity;
+                const auto last = direct.stars()[petal * beads + beads - 1].velocity;
+                require(speedOf(direct.stars()[petal * beads + beads - 1]) >
+                            speedOf(direct.stars()[petal * beads]) * 1.5f,
+                        "dahlia petals must have distinct inner and outer beads");
+                const float cross = std::abs(first.x * last.y - first.y * last.x);
+                require(cross < 250, "dahlia petals must stay in narrow radial bundles");
+            }
+            for (int i = petals * beads; i < style.stars; ++i)
+                require(speedOf(direct.stars()[i]) < 26 &&
+                            (style.multicolor || direct.stars()[i].color == style.secondary),
+                        "flower shells must have a slow pistil inside their petals");
+        }
+        if (type == ShellType::Carnival) {
+            for (int i = 0; i < style.stars; ++i) {
+                const auto v = direct.stars()[i].velocity;
+                require(std::abs(-v.y * 0.51f + v.z * 0.86f) < 0.15f,
+                        "carnival rings must share a tilted plane");
+                const float radius = std::sqrt(v.x * v.x + v.y * v.y / (0.86f * 0.86f));
+                require(std::abs(radius - (style.speedMax - (i % 3) * 25)) < 0.8f,
+                        "carnival must have three separated hollow rings");
+            }
+        }
+        if (type == ShellType::Star) {
+            int tips = 0, notches = 0;
+            for (int i = 0; i < style.stars; i += 36) {
+                const auto &s = direct.stars()[i];
+                require(s.velocity.z == 0, "star outline must face the camera");
+                if ((i / 36) % 2 == 0) tips += speedOf(s) > 90;
+                else notches += speedOf(s) < 40;
+            }
+            require(tips == 5 && notches == 5, "star must have five long tips and five deep notches");
+            for (const auto &s : direct.stars())
+                require(s.velocity.z == 0 && speedOf(s) > 30,
+                        "star must remain a hollow planar outline");
+        }
         if (type == ShellType::Ring) {
             // A ring is planar and hollow, and both halves have to be asserted:
             // a sphere would satisfy either one alone. Every velocity lies in

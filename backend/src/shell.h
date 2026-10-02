@@ -9,7 +9,8 @@ namespace fireworks {
 // copy of these numbers and quietly drift from them.
 inline constexpr float RingTiltCos = 0.40f, RingTiltSin = 0.92f;
 // Appended, never reordered: the plugin stores the selected shell as an index.
-enum class ShellType { Chrysanthemum, Palm, Willow, Prismatic, Ring, Peony, Crossette, Heart, Saturn, Spiral };
+enum class ShellType { Chrysanthemum, Palm, Willow, Prismatic, Ring, Peony, Crossette, Heart, Saturn, Spiral,
+                       Waterfall, Dahlia, Star, Bouquet, Carnival, RainbowRain };
 struct ShellDefinition {
     const char *slug;
     const char *name;
@@ -31,8 +32,9 @@ struct ShellDefinition {
     int splitInto = 0;
     float splitSpeed = 0;
     double heroTime = 3.7, fallTime = 5.9, decayTime = 8.2;
+    bool multicolor = false;
 };
-inline constexpr std::array<ShellDefinition, 10> Shells{{
+inline constexpr std::array<ShellDefinition, 16> Shells{{
     {.slug = "chrysanthemum",
      .name = "Crimson chrysanthemum",
      .description = "A crimson sphere, a cyan heart, and gold-changing tips.",
@@ -104,7 +106,8 @@ inline constexpr std::array<ShellDefinition, 10> Shells{{
      .transitionStart = 2,
      .transitionEnd = 3,
      .crackleStart = 1.4f,
-     .crackleEnd = 5.264f},
+     .crackleEnd = 5.264f,
+     .multicolor = true},
     {.slug = "ring",
      .name = "Sapphire ring",
      .description = "A tilted sapphire ring banded with rose, hanging before it falls.",
@@ -216,6 +219,78 @@ inline constexpr std::array<ShellDefinition, 10> Shells{{
      .transitionStart = 0.56f, .transitionEnd = 0.90f,
      .crackleStart = 2.3f, .crackleEnd = 4.4f, .audioCrackles = 92,
      .heroTime = 3.4, .fallTime = 4.9, .decayTime = 6.7},
+    {.slug = "waterfall",
+     .name = "Aurora waterfall",
+     .description = "A wide cyan and violet curtain pours into long golden rain.",
+     .stars = 224,
+     .speedMin = 48, .speedMax = 92,
+     .lifeMin = 5.4f, .lifeMax = 6.4f,
+     .drag = 0.24f, .trailLife = 2.3f, .trailWidth = 1.2f,
+     .sheddingInterval = 0.045f, .sheddingCount = 2,
+     .primary = SparkColor::Cyan, .secondary = SparkColor::Violet,
+     .transitionStart = 0.48f, .transitionEnd = 0.86f,
+     .crackleStart = 3.4f, .crackleEnd = 6.0f, .audioCrackles = 118,
+     .heroTime = 3.9, .fallTime = 6.2, .decayTime = 8.4},
+    {.slug = "dahlia",
+     .name = "Ruby dahlia",
+     .description = "Sixteen ruby and ice-blue petals surround a luminous cyan pistil.",
+     .stars = 288,
+     .speedMin = 60, .speedMax = 96,
+     .lifeMin = 4.2f, .lifeMax = 5.1f,
+     .drag = 0.38f, .trailLife = 1.2f, .trailWidth = 1.3f,
+     .sheddingInterval = 0.055f, .sheddingCount = 2,
+     .primary = SparkColor::Ruby, .secondary = SparkColor::Cyan,
+     .transitionStart = 0.48f, .transitionEnd = 0.86f,
+     .crackleStart = 2.6f, .crackleEnd = 4.9f, .audioCrackles = 104,
+     .heroTime = 3.5, .fallTime = 5.0, .decayTime = 7.2},
+    {.slug = "star",
+     .name = "Sapphire star",
+     .description = "A five-point sapphire star edged in rose, sparkling into gold.",
+     .stars = 360,
+     .speedMin = 38, .speedMax = 94,
+     .lifeMin = 3.8f, .lifeMax = 4.6f,
+     .drag = 0.40f, .trailLife = 0.22f, .trailWidth = 1.5f,
+     .sheddingInterval = 0.10f,
+     .primary = SparkColor::Sapphire, .secondary = SparkColor::Rose,
+     .transitionStart = 0.58f, .transitionEnd = 0.90f,
+     .crackleStart = 2.4f, .crackleEnd = 4.3f, .audioCrackles = 78,
+     .heroTime = 3.3, .fallTime = 4.8, .decayTime = 6.5},
+    {.slug = "bouquet",
+     .name = "Rainbow bouquet",
+     .description = "Twenty-four rainbow petals bloom around a multicolor sparkling heart.",
+     .stars = 336,
+     .speedMin = 58, .speedMax = 98,
+     .lifeMin = 4.6f, .lifeMax = 5.6f,
+     .drag = 0.38f, .trailLife = 1.3f, .trailWidth = 1.35f,
+     .sheddingInterval = 0.05f, .sheddingCount = 2,
+     .transitionStart = 0.72f, .transitionEnd = 0.96f,
+     .crackleStart = 3.5f, .crackleEnd = 5.3f, .audioCrackles = 112,
+     .heroTime = 3.6, .fallTime = 5.9, .decayTime = 7.7,
+     .multicolor = true},
+    {.slug = "carnival",
+     .name = "Carnival rings",
+     .description = "Three nested rainbow rings turn the sky into a luminous color wheel.",
+     .stars = 432,
+     .speedMin = 44, .speedMax = 94,
+     .lifeMin = 4.4f, .lifeMax = 5.3f,
+     .drag = 0.38f, .trailLife = 0.25f, .trailWidth = 1.5f,
+     .sheddingInterval = 0.085f,
+     .transitionStart = 0.74f, .transitionEnd = 0.97f,
+     .crackleStart = 3.2f, .crackleEnd = 5.0f, .audioCrackles = 96,
+     .heroTime = 3.5, .fallTime = 5.6, .decayTime = 7.4,
+     .multicolor = true},
+    {.slug = "rainbow-rain",
+     .name = "Rainbow rain",
+     .description = "Eight colors pour from a broad canopy, leaving jewel-colored falling trails.",
+     .stars = 224,
+     .speedMin = 48, .speedMax = 92,
+     .lifeMin = 5.8f, .lifeMax = 6.8f,
+     .drag = 0.24f, .trailLife = 2.3f, .trailWidth = 1.3f,
+     .sheddingInterval = 0.045f, .sheddingCount = 2,
+     .transitionStart = 0.74f, .transitionEnd = 0.96f,
+     .crackleStart = 4.1f, .crackleEnd = 6.5f, .audioCrackles = 124,
+     .heroTime = 4.0, .fallTime = 6.9, .decayTime = 8.8,
+     .multicolor = true},
 }};
 constexpr const ShellDefinition &shellDefinition(ShellType type) { return Shells[std::size_t(type)]; }
 constexpr int shellIndex(std::string_view slug) {

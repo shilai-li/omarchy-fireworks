@@ -2,6 +2,7 @@
 # Built by backend/ and copied in by hand; see README.md.
 /native/libfireworks_core.so
 /native/libfireworksplugin.so
+/native/build-info.json
 /backend/build*/
 /backend/artifacts/
 *.user
