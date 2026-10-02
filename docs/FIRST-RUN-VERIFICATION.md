@@ -25,5 +25,6 @@ Verified 2026-10-02 on the installed Omarchy shell, Intel Arc B390, OpenGL.
 
 Missing dependencies and incompatible Qt builds are reported in the terminal;
 automatic system-package installation is not implemented. The build helper
-requires the full repository's backend source. This change has not been
-published to GitHub, so remote clones do not yet include the setup flow.
+requires the full repository's backend source. The setup flow was subsequently
+published with the prebuilt alternative in v0.2.0; see
+[PREBUILT-VERIFICATION.md](PREBUILT-VERIFICATION.md).

@@ -1,5 +1,5 @@
 # The two compiled Qt/QRhi modules the plugin loads via `import "native"`.
-# Built by backend/ and copied in by hand; see README.md.
+# Built from backend/ or downloaded by setup; see README.md.
 /native/libfireworks_core.so
 /native/libfireworksplugin.so
 /native/build-info.json

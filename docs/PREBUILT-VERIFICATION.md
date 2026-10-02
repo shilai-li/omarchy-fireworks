@@ -28,6 +28,17 @@ Local verification on 2026-10-02:
 - A mismatched qt6-base package was rejected before download or installation.
 - Both setup scripts passed bash syntax validation; git diff --check passed.
 
+Published-release verification:
+
+- Published v0.2.0 with native and matching source archives plus SHA256SUMS.
+- Downloaded the public native asset through the installer; its pinned checksum,
+  Qt package checks and shared-library dependency checks passed.
+- Cloned the public GitHub repository into a fresh temporary directory and ran
+  the prebuilt installer. No compiler or CMake was invoked.
+- The installed prebuilt passed the existing native QML import check.
+- Altering its recorded Qt package version made the entry point's readiness
+  check reject it, preventing an incompatible import after a Qt update.
+
 QRhi's private API has no binary compatibility guarantee. This archive is not
 claimed to work on other architectures, distributions or Qt package builds.
 Use the source option when no compatible published archive is available.
