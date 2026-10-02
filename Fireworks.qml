@@ -15,6 +15,13 @@ Item {
     property bool checked: false
     property bool buildRequested: false
     property bool prebuiltAvailable: false
+    readonly property string setupFontFamily: FireworksState.barWidget && FireworksState.barWidget.bar
+        ? FireworksState.barWidget.bar.fontFamily : Style.font.family
+    component SetupText: Text {
+        font.family: root.setupFontFamily
+        font.pixelSize: Style.font.caption
+        textFormat: Text.PlainText
+    }
     property string note: "Choose how to set up Fireworks. Build from source opens a centered Omarchy terminal with instructions and live output. A prebuilt download can be used when a compatible release is published."
     readonly property bool settingsOpen: setupOpen || (effect.item ? effect.item.settingsOpen : false)
     readonly property bool opened: setupOpen || (effect.item ? effect.item.opened : false)
@@ -85,48 +92,50 @@ Item {
             Column {
                 id: content
                 width: parent.width
-                spacing: 16
+                spacing: Style.space(12)
                 focus: true
                 Keys.onEscapePressed: root.closeSettings()
                 Keys.onReturnPressed: root.build()
-                Text { text: "Set up Fireworks"; color: Color.menu.text; font.pixelSize: 24 }
+                SetupText { text: "Set up Fireworks"; color: Color.menu.text; font.bold: true; font.letterSpacing: 1 }
                 Flickable {
                     width: parent.width
                     height: Math.min(message.implicitHeight, Style.space(120))
                     contentHeight: message.implicitHeight
                     clip: true
-                    Text { id: message; width: parent.width; text: root.note; textFormat: Text.PlainText; wrapMode: Text.Wrap; color: Color.menu.text }
+                    SetupText { id: message; width: parent.width; text: root.note; wrapMode: Text.Wrap; color: Color.menu.text }
                 }
                 Column {
                     width: parent.width
-                    spacing: 12
+                    spacing: Style.space(6)
                     Rectangle {
-                        width: parent.width; height: 72; radius: 6
+                        width: parent.width; height: prebuiltText.implicitHeight + Style.space(16); radius: Style.cornerRadius
                         color: Color.menu.selectedBackground
                         opacity: root.prebuiltAvailable ? 1 : 0.5
                         Column {
-                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 16 }
-                            spacing: 4
-                            Text { text: "Use prebuilt"; color: Color.menu.selectedText }
-                            Text { width: parent.width; text: root.prebuiltAvailable ? "Download the compatible release. No compilation." : "Unavailable — no release is currently published."; wrapMode: Text.Wrap; color: Color.menu.selectedText }
+                            id: prebuiltText
+                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: Style.space(8) }
+                            spacing: Style.space(4)
+                            SetupText { text: "Use prebuilt"; color: Color.menu.selectedText; font.pixelSize: Style.font.body }
+                            SetupText { width: parent.width; text: root.prebuiltAvailable ? "Download the compatible release. No compilation." : "Unavailable — no release is currently published."; wrapMode: Text.Wrap; color: Color.menu.selectedText }
                         }
                         MouseArea { anchors.fill: parent; enabled: root.prebuiltAvailable; onClicked: root.build("prebuilt") }
                     }
                     Rectangle {
-                        width: parent.width; height: 72; radius: 6
+                        width: parent.width; height: sourceText.implicitHeight + Style.space(16); radius: Style.cornerRadius
                         color: Color.menu.background; border.color: Color.menu.border
                         Column {
-                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 16 }
-                            spacing: 4
-                            Text { text: "Build from source"; color: Color.menu.text }
-                            Text { width: parent.width; text: "Build for your installed Qt libraries. Opens a centered terminal."; wrapMode: Text.Wrap; color: Color.menu.text }
+                            id: sourceText
+                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: Style.space(8) }
+                            spacing: Style.space(4)
+                            SetupText { text: "Build from source"; color: Color.menu.text; font.pixelSize: Style.font.body }
+                            SetupText { width: parent.width; text: "Build for your installed Qt libraries. Opens a centered terminal."; wrapMode: Text.Wrap; color: Color.menu.text }
                         }
                         MouseArea { anchors.fill: parent; onClicked: root.build("source") }
                     }
                     Rectangle {
-                        width: 100; height: 42; radius: 6
+                        width: Style.space(80); height: Style.font.body + Style.space(16); radius: Style.cornerRadius
                         color: Color.menu.background; border.color: Color.menu.border
-                        Text { anchors.centerIn: parent; text: "Close"; color: Color.menu.text }
+                        SetupText { anchors.centerIn: parent; text: "Close"; color: Color.menu.text; font.pixelSize: Style.font.body }
                         MouseArea { anchors.fill: parent; onClicked: root.closeSettings() }
                     }
                 }
