@@ -28,3 +28,24 @@ automatic system-package installation is not implemented. The build helper
 requires the full repository's backend source. The setup flow was subsequently
 published with the prebuilt alternative in v0.2.0; see
 [PREBUILT-VERIFICATION.md](PREBUILT-VERIFICATION.md).
+
+## Bar popup and terminal confirmation
+
+Verified 2026-10-02 after replacing the centered setup card and settings card
+with Omarchy's `KeyboardPanel`, anchored to the active Fireworks bar icon.
+The live setup popup was visually inspected beneath the icon. Both setup
+choices are visible; the withdrawn prebuilt release is marked unavailable.
+
+The build action opened the Omarchy presentation terminal, with the build
+summary, installed checkout's commit, cache folder, dependency instructions and
+`Continue? [Y/n]`. The terminal was verified floating at 875×600 logical pixels
+on the 1536×960 logical monitor, centered within the work area. The launcher
+positions only its newly created window, so it also works when the desktop's
+usual floating-window rules are not active.
+
+No confirmation was accepted during this check. Declining the prompt was
+separately checked to exit before pausing the plugin or creating build files.
+Source builds now compile a committed clone under the user's cache directory,
+then install the resulting libraries into the original plugin. The QML loaded
+in an isolated Quickshell instance, the bundle built, both setup scripts passed
+syntax validation, and manifest validation and git diff --check passed.
