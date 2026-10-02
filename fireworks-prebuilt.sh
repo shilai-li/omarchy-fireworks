@@ -1,10 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 plugin_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+metadata="$plugin_dir/prebuilt.json"
+if ! jq -e '.available != false and (.url | length > 0)' "$metadata" >/dev/null; then
+  echo 'No prebuilt release is currently published. Use Build from source.' >&2
+  exit 1
+fi
+if [[ ${1-} == --available ]]; then exit 0; fi
 for tool in curl jq pacman sha256sum python; do
   command -v "$tool" >/dev/null || { echo "Missing $tool. Use Build from source or install this tool." >&2; exit 1; }
 done
-metadata="$plugin_dir/prebuilt.json"
 [[ $(uname -s) == Linux && $(uname -m) == "$(jq -r .architecture "$metadata")" ]] || {
   echo 'No compatible prebuilt for this architecture. Use Build from source.' >&2; exit 1;
 }

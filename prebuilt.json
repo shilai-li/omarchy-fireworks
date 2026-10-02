@@ -1,5 +1,6 @@
 {
-  "release": "v0.2.0",
+  "available": false,
+  "release": "",
   "architecture": "x86_64",
   "qtPackages": {
     "qt6-base": "6.11.2-3",
@@ -7,6 +8,6 @@
     "qt6-shadertools": "6.11.2-1",
     "qt6-multimedia": "6.11.2-1"
   },
-  "url": "https://github.com/shilai-li/omarchy-fireworks/releases/download/v0.2.0/fireworks-native-linux-x86_64-qt6.11.2.tar.gz",
-  "sha256": "423964dda04fd38d9308b9e070984904e5f957494c626259da05e7c4f4d099a1"
+  "url": "",
+  "sha256": ""
 }

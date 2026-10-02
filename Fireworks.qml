@@ -14,7 +14,8 @@ Item {
     property bool setupOpen: false
     property bool checked: false
     property bool buildRequested: false
-    property string note: "Choose a prebuilt download or build Fireworks from source. The prebuilt installer checks your architecture and Qt package versions. Both options open a terminal with progress and any errors."
+    property bool prebuiltAvailable: false
+    property string note: "Fireworks needs a native build on this computer. Choose Build from source to open a terminal with instructions and live output. No prebuilt release is currently published."
     readonly property bool settingsOpen: setupOpen || (effect.item ? effect.item.settingsOpen : false)
     readonly property bool opened: setupOpen || (effect.item ? effect.item.opened : false)
     readonly property bool flying: effect.item ? effect.item.flying : false
@@ -34,6 +35,14 @@ Item {
 
     Component.onCompleted: FireworksState.overlay = root
     Component.onDestruction: { if (FireworksState.overlay === root) FireworksState.overlay = null }
+    Process {
+        command: ["bash", root.pluginDir + "/fireworks-prebuilt.sh", "--available"]
+        running: true
+        onExited: function(code, status) {
+            root.prebuiltAvailable = code === 0
+            if (root.prebuiltAvailable) root.note = "Choose a prebuilt download or build Fireworks from source. Both options open a terminal with progress and any errors."
+        }
+    }
     Process {
         id: probe
         command: ["bash", root.pluginDir + "/fireworks-build.sh", "--check"]
@@ -95,6 +104,7 @@ Item {
                 Row {
                     spacing: 24
                     Rectangle {
+                        visible: root.prebuiltAvailable
                         width: 185; height: 42; radius: 6
                         color: Color.menu.selectedBackground
                         Text { anchors.centerIn: parent; text: "Use prebuilt"; color: Color.menu.selectedText }

@@ -158,7 +158,8 @@ An Omarchy plugin is cloned files only — `omarchy plugin add` builds nothing
 and runs nothing — but Fireworks needs two compiled Qt/QRhi libraries that
 Quickshell loads directly (`import "native"`), not a daemon reached over IPC.
 On a fresh install, the plugin opens a setup card before loading its native
-module. Choose **Use prebuilt** to download the published libraries, or
+module. No prebuilt release is currently published; choose **Build from source**.
+When a release is available, choose **Use prebuilt** to download its libraries, or
 **Build from source** (also Enter) to compile them yourself. Both choices open
 the configured Omarchy terminal with progress and any errors; press Enter when
 setup finishes to close it. Escape closes the card; the bar icon opens it again.

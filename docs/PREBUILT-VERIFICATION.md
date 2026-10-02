@@ -1,5 +1,9 @@
 # Prebuilt distribution
 
+The v0.2.0 release and tag were withdrawn at the user's request. The manifest
+is 0.1.0, and prebuilt downloads are disabled until a new release is published.
+The verification below records the former release as historical evidence.
+
 The v0.2.0 native release targets Linux x86_64 and these Arch packages:
 
 - qt6-base 6.11.2-3
