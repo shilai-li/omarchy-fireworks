@@ -163,8 +163,9 @@ No prebuilt release is currently published; choose **Build from source**.
 When a release is available, choose **Use prebuilt** to download its libraries, or
 **Build from source** (also Enter) to compile them yourself. Both choices open
 the centered floating Omarchy terminal with progress and any errors (with a
-standard-terminal fallback if the floating launcher is unavailable); press Enter when
-setup finishes to close it. Escape closes the card; the bar icon opens it again.
+standard-terminal fallback if the floating launcher is unavailable). After
+setup, press a key once at Omarchy's Done prompt to close it; the fallback asks
+for Enter. Escape closes the card; the bar icon opens it again.
 The terminal first explains the build, install location and shell restart,
 shows the source commit and cache directory, then asks **Continue? [Y/n]**.
 Declining makes no changes. Source builds compile a clone of the plugin's

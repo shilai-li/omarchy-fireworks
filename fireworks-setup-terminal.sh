@@ -42,7 +42,7 @@ position_terminal() {
 
 presenter=$(trusted omarchy-launch-floating-terminal-with-presentation) || presenter=""
 if [[ -n $presenter ]]; then
-  printf -v setup_command '%q ' /usr/bin/bash "$plugin_dir/fireworks-build.sh" --terminal "$mode"
+  printf -v setup_command '%q ' /usr/bin/bash "$plugin_dir/fireworks-build.sh" --terminal "$mode" --presented
   "$presenter" "$setup_command" &
 else
   terminal=$(trusted xdg-terminal-exec) || {

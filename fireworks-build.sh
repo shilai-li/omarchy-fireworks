@@ -32,7 +32,11 @@ if [[ ${1-} == --terminal ]]; then
   fi
   omarchy plugin enable shilai_li.fireworks
   trap - EXIT
-  read -r -p 'Press Enter to close this terminal…' || true
+  # The Omarchy presentation wrapper provides its own Done/close prompt.
+  # Keep our pause only for the ordinary-terminal fallback.
+  if [[ ${3-} != --presented ]]; then
+    read -r -p 'Press Enter to close this terminal…' || true
+  fi
   exit "$result"
 fi
 if [[ ${1-} == --check ]]; then
