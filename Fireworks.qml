@@ -70,26 +70,21 @@ Item {
             root.note = "The native module could not load. Rebuild it for the installed Qt version, then restart the Omarchy shell."
         }
     }
-    PanelWindow {
+    KeyboardPanel {
         id: panel
-        visible: root.setupOpen
-        anchors { left: true; right: true; top: true; bottom: true }
-        color: "transparent"
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.namespace: "omarchy-fireworks-setup"
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-        Rectangle { anchors.fill: parent; color: Color.menu.scrim }
-        Rectangle {
-            width: Math.min(640, panel.width - 48)
-            height: Math.min(content.implicitHeight + 48, panel.height - 48)
-            anchors.centerIn: parent
-            color: Color.menu.background
-            radius: Style.cornerRadius
-            border.color: Color.menu.border
+        anchorItem: FireworksState.barWidget ? FireworksState.barWidget.panelAnchor : null
+        bar: FireworksState.barWidget ? FireworksState.barWidget.bar : null
+        owner: FireworksState.barWidget || root
+        open: root.setupOpen && FireworksState.barWidget !== null
+        focusTarget: setupKeys
+        contentWidth: fittedContentWidth(Style.space(400))
+        contentHeight: fittedContentHeight(content.implicitHeight)
+        Item {
+            id: setupKeys
+            anchors.fill: parent
             Column {
                 id: content
-                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 24 }
+                width: parent.width
                 spacing: 16
                 focus: true
                 Keys.onEscapePressed: root.closeSettings()
@@ -97,7 +92,7 @@ Item {
                 Text { text: "Set up Fireworks"; color: Color.menu.text; font.pixelSize: 24 }
                 Flickable {
                     width: parent.width
-                    height: Math.min(message.implicitHeight, panel.height - 240)
+                    height: Math.min(message.implicitHeight, Style.space(120))
                     contentHeight: message.implicitHeight
                     clip: true
                     Text { id: message; width: parent.width; text: root.note; textFormat: Text.PlainText; wrapMode: Text.Wrap; color: Color.menu.text }

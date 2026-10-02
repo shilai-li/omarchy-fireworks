@@ -158,12 +158,20 @@ An Omarchy plugin is cloned files only — `omarchy plugin add` builds nothing
 and runs nothing — but Fireworks needs two compiled Qt/QRhi libraries that
 Quickshell loads directly (`import "native"`), not a daemon reached over IPC.
 On a fresh install, the plugin opens a setup card before loading its native
-module. No prebuilt release is currently published; choose **Build from source**.
+module. Setup and settings open in a bar-anchored popup, like Studio Effects.
+No prebuilt release is currently published; choose **Build from source**.
 When a release is available, choose **Use prebuilt** to download its libraries, or
 **Build from source** (also Enter) to compile them yourself. Both choices open
 the centered floating Omarchy terminal with progress and any errors (with a
 standard-terminal fallback if the floating launcher is unavailable); press Enter when
 setup finishes to close it. Escape closes the card; the bar icon opens it again.
+The terminal first explains the build, install location and shell restart,
+shows the source commit and cache directory, then asks **Continue? [Y/n]**.
+Declining makes no changes. Source builds compile a clone of the plugin's
+committed checkout under `~/.cache/omarchy-fireworks-build/`; source files in the
+installed plugin are left alone. Only its resulting native libraries and build
+metadata are installed into the plugin. No system package or root access is
+needed when the build dependencies are already present.
 
 The prebuilt option requires Linux x86_64 and the exact Arch Qt package versions
 recorded in [prebuilt.json](prebuilt.json). It verifies the release's SHA-256

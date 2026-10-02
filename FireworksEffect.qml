@@ -38,6 +38,7 @@ Item {
     readonly property string fontFamily: Style.font.menuFamily
 
     // -------------------------------------------------------------- lifecycle
+    readonly property var barWidget: FireworksState.barWidget
     readonly property bool flying: launches.activeCount > 0 || launches.scheduled
     property bool settingsOpen: false
     readonly property int shellType: director.shellType
@@ -339,41 +340,25 @@ Item {
         }
     }
 
-    // -------------------------------------------------------- the settings card
-    PanelWindow {
+    // Settings use the same bar-anchored popup as other Omarchy plugins.
+    KeyboardPanel {
         id: settingsPanel
-        visible: root.settingsOpen
-        anchors { left: true; right: true; top: true; bottom: true }
-        color: "transparent"
-        WlrLayershell.namespace: "omarchy-fireworks-settings"
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-        exclusionMode: ExclusionMode.Ignore
+        anchorItem: root.barWidget ? root.barWidget.panelAnchor : null
+        bar: root.barWidget ? root.barWidget.bar : null
+        owner: root.barWidget || root
+        open: root.settingsOpen && root.barWidget !== null
+        focusTarget: settingsKeys
+        contentWidth: fittedContentWidth(Style.space(520))
+        contentHeight: fittedContentHeight(form.implicitHeight)
 
-        Rectangle { anchors.fill: parent; color: root.scrim }
-        MouseArea { anchors.fill: parent; onClicked: root.closeSettings() }
-
-        BorderSurface {
-            id: card
-            width: Math.min(Style.space(520), settingsPanel.width - Style.gapsOut * 2)
-            height: Math.min(form.implicitHeight + card.contentTopInset + card.contentBottomInset,
-                             settingsPanel.height - Style.gapsOut * 2)
-            anchors.centerIn: parent
-            color: root.background
-            borderSpec: root.borderSpec
-            radius: root.cornerRadius
-            padding: Style.space(24)
-
-            MouseArea { anchors.fill: parent; onClicked: {} }
-
-            // BorderSurface exposes its insets but does not apply them —
-            // content has to inset itself or it renders under the border.
+        Flickable {
+            anchors.fill: parent
+            contentHeight: form.implicitHeight
+            clip: true
             Item {
-                anchors.fill: parent
-                anchors.topMargin: card.contentTopInset
-                anchors.rightMargin: card.contentRightInset
-                anchors.bottomMargin: card.contentBottomInset
-                anchors.leftMargin: card.contentLeftInset
+                id: settingsKeys
+                width: parent.width
+                height: form.implicitHeight
                 focus: true
 
                 // The card holds exclusive keyboard focus while it is up, on a

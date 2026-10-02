@@ -14,12 +14,24 @@ Ui.BarWidget {
 
     implicitWidth: button.implicitWidth
     implicitHeight: button.implicitHeight
+    readonly property var panelAnchor: button
+    property bool popoutSwitchClosing: false
 
     // Shape contract for the shell's summon/toggle routing. The overlay owns
     // the card, so both ends agree on what "open" means for this plugin.
     readonly property bool opened: FireworksState.overlay ? FireworksState.overlay.settingsOpen === true : false
-    function open() { if (FireworksState.overlay) FireworksState.overlay.openSettings() }
+    function open() {
+        FireworksState.barWidget = root
+        if (FireworksState.overlay) FireworksState.overlay.openSettings()
+    }
     function close() { if (FireworksState.overlay) FireworksState.overlay.closeSettings() }
+    function closeForPopoutSwitch() {
+        popoutSwitchClosing = true
+        close()
+        Qt.callLater(function() { root.popoutSwitchClosing = false })
+    }
+    Component.onCompleted: FireworksState.barWidget = root
+    Component.onDestruction: { if (FireworksState.barWidget === root) FireworksState.barWidget = null }
 
     Ui.BarIconButton {
         id: button
@@ -30,7 +42,7 @@ Ui.BarWidget {
         onPressed: function(b) {
             if (!FireworksState.overlay) return
             if (FireworksState.overlay.settingsOpen) FireworksState.overlay.closeSettings()
-            else FireworksState.overlay.openSettings()
+            else root.open()
         }
     }
 }
