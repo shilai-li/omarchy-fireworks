@@ -161,7 +161,8 @@ On a fresh install, the plugin opens a setup card before loading its native
 module. No prebuilt release is currently published; choose **Build from source**.
 When a release is available, choose **Use prebuilt** to download its libraries, or
 **Build from source** (also Enter) to compile them yourself. Both choices open
-the configured Omarchy terminal with progress and any errors; press Enter when
+the centered floating Omarchy terminal with progress and any errors (with a
+standard-terminal fallback if the floating launcher is unavailable); press Enter when
 setup finishes to close it. Escape closes the card; the bar icon opens it again.
 
 The prebuilt option requires Linux x86_64 and the exact Arch Qt package versions

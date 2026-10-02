@@ -15,7 +15,7 @@ Item {
     property bool checked: false
     property bool buildRequested: false
     property bool prebuiltAvailable: false
-    property string note: "Fireworks needs a native build on this computer. Choose Build from source to open a terminal with instructions and live output. No prebuilt release is currently published."
+    property string note: "Choose how to set up Fireworks. Build from source opens a centered Omarchy terminal with instructions and live output. A prebuilt download can be used when a compatible release is published."
     readonly property bool settingsOpen: setupOpen || (effect.item ? effect.item.settingsOpen : false)
     readonly property bool opened: setupOpen || (effect.item ? effect.item.opened : false)
     readonly property bool flying: effect.item ? effect.item.flying : false
@@ -27,10 +27,11 @@ Item {
     function close() { setupOpen = false; if (effect.item) effect.item.close() }
     function status(arg) { return effect.item ? effect.item.status(arg) : JSON.stringify({ready: false, buildRequested: buildRequested}) }
     function build(mode) {
+        if (mode === "prebuilt" && !prebuiltAvailable) return
         buildRequested = true
         note = "Finish setup in the terminal. If the prebuilt download is incompatible, use Build from source. The terminal shows progress and any errors."
         setupOpen = false
-        Quickshell.execDetached(["omarchy", "launch", "terminal", "bash", root.pluginDir + "/fireworks-build.sh", "--terminal", mode === "prebuilt" ? "prebuilt" : "source"])
+        Quickshell.execDetached(["/usr/bin/bash", root.pluginDir + "/fireworks-setup-terminal.sh", mode === "prebuilt" ? "prebuilt" : "source"])
     }
 
     Component.onCompleted: FireworksState.overlay = root
@@ -101,19 +102,30 @@ Item {
                     clip: true
                     Text { id: message; width: parent.width; text: root.note; textFormat: Text.PlainText; wrapMode: Text.Wrap; color: Color.menu.text }
                 }
-                Row {
-                    spacing: 24
+                Column {
+                    width: parent.width
+                    spacing: 12
                     Rectangle {
-                        visible: root.prebuiltAvailable
-                        width: 185; height: 42; radius: 6
+                        width: parent.width; height: 72; radius: 6
                         color: Color.menu.selectedBackground
-                        Text { anchors.centerIn: parent; text: "Use prebuilt"; color: Color.menu.selectedText }
-                        MouseArea { anchors.fill: parent; onClicked: root.build("prebuilt") }
+                        opacity: root.prebuiltAvailable ? 1 : 0.5
+                        Column {
+                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 16 }
+                            spacing: 4
+                            Text { text: "Use prebuilt"; color: Color.menu.selectedText }
+                            Text { width: parent.width; text: root.prebuiltAvailable ? "Download the compatible release. No compilation." : "Unavailable — no release is currently published."; wrapMode: Text.Wrap; color: Color.menu.selectedText }
+                        }
+                        MouseArea { anchors.fill: parent; enabled: root.prebuiltAvailable; onClicked: root.build("prebuilt") }
                     }
                     Rectangle {
-                        width: 185; height: 42; radius: 6
+                        width: parent.width; height: 72; radius: 6
                         color: Color.menu.background; border.color: Color.menu.border
-                        Text { anchors.centerIn: parent; text: "Build from source"; color: Color.menu.text }
+                        Column {
+                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 16 }
+                            spacing: 4
+                            Text { text: "Build from source"; color: Color.menu.text }
+                            Text { width: parent.width; text: "Build for your installed Qt libraries. Opens a centered terminal."; wrapMode: Text.Wrap; color: Color.menu.text }
+                        }
                         MouseArea { anchors.fill: parent; onClicked: root.build("source") }
                     }
                     Rectangle {

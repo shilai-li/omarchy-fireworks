@@ -66,7 +66,7 @@ endif()
 get_filename_component(FIREWORKS_REPO_ROOT "${CMAKE_SOURCE_DIR}/.." ABSOLUTE)
 set(FIREWORKS_PLUGIN_FILES
     Fireworks.qml FireworksEffect.qml BarWidget.qml FireworksState.qml LaunchPool.qml
-    fireworks-build.sh fireworks-prebuilt.sh prebuilt.json fireworks-ctl.sh qmldir manifest.json)
+    fireworks-build.sh fireworks-prebuilt.sh fireworks-setup-terminal.sh prebuilt.json fireworks-ctl.sh qmldir manifest.json)
 list(TRANSFORM FIREWORKS_PLUGIN_FILES PREPEND "${FIREWORKS_REPO_ROOT}/")
 
 add_custom_target(plugin-bundle ALL
