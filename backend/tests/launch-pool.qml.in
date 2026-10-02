@@ -105,14 +105,21 @@ Item {
                 check(!displayPool.scheduled, "a display must finish its queue")
                 check(guard === displayPool.displays[2].lifts.length - 1,
                       "a display must fire each of its lifts once")
-                // The newest slots ran the finale, and a finale is the shell
-                // that was actually chosen even when the rest was mixed.
+                // The finale is a different-shell pair on opposite sides,
+                // ending on the chosen shell.
                 var newest = []
                 for (var i = 0; i < displayPool.capacity; ++i) newest.push(displayPool.slot(i))
                 newest.sort(function(a, b) { return b.serial - a.serial })
-                for (var f = 0; f < displayPool.displays[2].finale; ++f)
-                    check(newest[f].controller.shellType === 5,
-                          "a mixed display must end on the chosen shell")
+                check(newest[0].controller.shellType === 5,
+                      "a mixed display must end on the chosen shell")
+                check(newest[1].controller.shellType !== newest[0].controller.shellType,
+                      "the finale must use different shells")
+                var lastX = newest[0].controller.launchX
+                var previousX = newest[1].controller.launchX
+                check(lastX * previousX < 0 && Math.abs(lastX - previousX) >= 1.1,
+                      "the finale must launch on separated opposite sides")
+                check(!newest[0].controller.randomLaunch && !newest[1].controller.randomLaunch,
+                      "native random placement must not override the separated finale")
                 displayPool.stop()
                 check(!displayPool.scheduled && displayPool.activeCount === 0,
                       "stopping must cancel a queued display and its shells")

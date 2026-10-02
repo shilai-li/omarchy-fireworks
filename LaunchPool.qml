@@ -19,8 +19,8 @@ Item {
     readonly property real shellLife: 11.0
 
     // What one trigger fires. `lifts` are seconds after the trigger; the last
-    // `finale` entries always use the chosen shell, so a mixed display still
-    // ends on what was picked.
+    // `finale` entries form a separated pair of different shells; the last
+    // shell is the chosen one, so a mixed display still ends on what was picked.
     //
     // The schedules are spaced to peak at `capacity` and no higher — the fifth
     // concurrent launch evicts the oldest slot mid-flight, which would cut a
@@ -31,7 +31,7 @@ Item {
     readonly property var displays: [
         { name: "one shell", lifts: [0], mixed: false, finale: 0 },
         { name: "volley", lifts: [0, 1.3, 2.6, 3.9], mixed: false, finale: 0 },
-        { name: "full show", lifts: [0, 2.8, 5.6, 8.4, 14.2, 14.6], mixed: true, finale: 2 }
+        { name: "full show", lifts: [0, 2.8, 5.6, 8.4, 14.2, 14.6], mixed: true, finale: 2, randomLaunch: true }
     ]
 
     // The schedule in flight, if any. A display is a queue of launches, so it
@@ -42,6 +42,7 @@ Item {
     property bool pendingQuiet: false
     property real pendingLaunchX: 0
     property bool pendingRandom: false
+    property int finaleSide: 1
     readonly property bool scheduled: pool.pendingStep >= 0
     readonly property int activeCount: {
         // itemAt() is not a notifying property. Re-evaluate after delegates
@@ -86,7 +87,10 @@ Item {
         pool.pendingShell = shell
         pool.pendingQuiet = quiet === true
         pool.pendingLaunchX = launchX
-        pool.pendingRandom = randomLaunch === true
+        // Full shows scatter every lift, including the finale. Other displays
+        // follow the user's launch-position setting.
+        pool.pendingRandom = pool.pendingPlan.randomLaunch === true || randomLaunch === true
+        pool.finaleSide = displayRandom(0) < 0.5 ? -1 : 1
         pool.pendingStep = 0
         fireStep()
     }
@@ -97,6 +101,14 @@ Item {
         pool.pendingPlan = null
     }
 
+    function displayRandom(step) {
+        var state = ((pool.serial + 1) * 7919 + step * 104729) | 0
+        state ^= state << 13
+        state ^= state >>> 17
+        state ^= state << 5
+        return (state >>> 0) / 4294967296
+    }
+
     function fireStep() {
         var plan = pool.pendingPlan
         if (!plan || pool.pendingStep < 0 || pool.pendingStep >= plan.lifts.length) {
@@ -104,11 +116,20 @@ Item {
             return
         }
         var step = pool.pendingStep
-        // Mixed displays draw from the catalog, except the finale, which is
-        // the shell that was actually chosen.
-        var shell = (plan.mixed && step < plan.lifts.length - plan.finale) ? mixedShell(step)
-                                                                          : pool.pendingShell
-        launch(shell, pool.pendingQuiet, pool.pendingLaunchX, pool.pendingRandom)
+        var last = step === plan.lifts.length - 1
+        var shell = plan.mixed && !last ? mixedShell(step) : pool.pendingShell
+        var launchX = pool.pendingLaunchX
+        var randomLaunch = pool.pendingRandom
+        if (plan.mixed && step >= plan.lifts.length - plan.finale) {
+            // Pair different shells on opposite sides, with randomized order
+            // and distance from centre. Resolve here so native random placement
+            // cannot pull the two nearly simultaneous lifts together again.
+            if (!last && shell === pool.pendingShell && pool.shellCount > 1)
+                shell = (shell + 1) % pool.shellCount
+            launchX = pool.finaleSide * (last ? -1 : 1) * (0.55 + 0.4 * displayRandom(step + 1))
+            randomLaunch = false
+        }
+        launch(shell, pool.pendingQuiet, launchX, randomLaunch)
         pool.pendingStep = step + 1
         if (pool.pendingStep >= plan.lifts.length) {
             cancelPending()

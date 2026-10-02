@@ -88,7 +88,10 @@ HDR scene → bloom → tone mapping → transparent overlay
   Playback currently requires an output supporting 48 kHz stereo 16-bit PCM.
 - **Display** decides how much one trigger sends up: `one shell`, a `volley` of
   four of the chosen shell, or a `full show` of six — mixed from the catalog and
-  ending on a two-shell finale of the one you picked. The schedules live in one
+  ending on a two-shell finale of different shells, with the one you picked last.
+  The finale launches on opposite sides with random offsets. Every shell in a full show
+  launches at a random horizontal position, including the finale; one shell and
+  volley follow the launch-position setting. The schedules live in one
   table in `LaunchPool.qml` and are spaced so no more than four shells are
   ever in the air at once, because the fifth would evict a shell still burning.
 
