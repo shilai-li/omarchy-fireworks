@@ -220,7 +220,27 @@ git URL — neither this repo nor the retired sibling had been pushed to GitHub
 at verification time.
 See [docs/RESTRUCTURE-VERIFICATION.md](docs/RESTRUCTURE-VERIFICATION.md).
 
+### Catalog expansion — Waterfall, dahlia and star
+
+- [x] Three shells appended at indices 10–12, keeping saved selections stable.
+- [x] Distinct waterfall streamers, layered dahlia petals and five-point outline.
+- [x] Shape, deterministic motion, burn-history, audio and cleanup checks pass.
+- [x] Vulkan launch/bloom/fall/decay captures visually reviewed for all three.
+- [x] Native update installed; all three launched through live OpenGL shell IPC.
+
+Verified 2026-10-01 on Intel Arc B390. See
+[docs/NEW-SHELL-VERIFICATION.md](docs/NEW-SHELL-VERIFICATION.md).
+Desktop frame-rate targets remain unmeasured for these new shells.
+
 ### Subsequent work
+
+The catalog also includes an eight-color rainbow bouquet, carnival rings and
+rainbow rain, appended at indices 13–15. All four suites and Vulkan bloom/fall
+color checks pass; see [docs/NEW-SHELL-VERIFICATION.md](docs/NEW-SHELL-VERIFICATION.md).
+Volley uses four distinct styles; full show visits the complete catalog once,
+at a saved 3–12 second interval controlled by the settings slider (default 3),
+with random positions and the
+selected shell last. The older six-shell display and paired finale are superseded.
 
 1. Show choreography, coordinated monitor views, and richer sound design.
 2. Performance tuning against measured GPU/CPU frame times on real displays.
