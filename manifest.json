@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "shilai_li.fireworks",
+  "name": "Fireworks",
+  "version": "0.1.0",
+  "author": "Shilai Li",
+  "license": "MIT",
+  "description": "Sixteen authored firework shells with changing colors and golden crackle, including eight-color bouquets, carnival rings and rainbow rain",
+  "kinds": ["overlay", "bar-widget"],
+  "keepLoaded": true,
+  "entryPoints": {"overlay": "Fireworks.qml", "barWidget": "BarWidget.qml"},
+  "barWidget": {"displayName": "Fireworks", "description": "Launch the selected firework shell", "category": "Other", "allowMultiple": false, "defaultSection": "right"}
+}

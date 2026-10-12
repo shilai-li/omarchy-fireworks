@@ -1,0 +1,49 @@
+import QtQuick
+import Quickshell
+
+ShellRoot {
+    id: test
+    property int shellIndex: 0
+    property var shells: ["chrysanthemum", "palm", "willow"]
+    function launchNext() {
+        overlay.item.open(JSON.stringify({muted: true, shell: shells[shellIndex]}))
+        if (overlay.item.shellType !== shellIndex) {
+            console.error("FAIL: IPC shell selection")
+            Qt.quit()
+        }
+    }
+    // Like Omarchy, load an external plugin by URL rather than making its
+    // entire directory part of Quickshell's configuration import scanner.
+    Loader {
+        id: overlay
+        source: "file://@CMAKE_BINARY_DIR@/plugin/Fireworks.qml"
+    }
+    Timer {
+        interval: 250
+        running: true
+        onTriggered: {
+            if (overlay.status !== Loader.Ready) {
+                console.error("FAIL: overlay did not load")
+                Qt.quit()
+            } else test.launchNext()
+        }
+    }
+    Timer {
+        interval: 11800
+        running: true
+        repeat: true
+        onTriggered: {
+            if (!overlay.item || overlay.item.flying) {
+                console.error("FAIL: overlay did not finish")
+                Qt.quit()
+                return
+            }
+            console.log("PASS: shell launch and cleanup:", test.shells[test.shellIndex])
+            ++test.shellIndex
+            if (test.shellIndex === test.shells.length) {
+                console.log("PASS: overlay launch and cleanup")
+                Qt.quit()
+            } else test.launchNext()
+        }
+    }
+}
